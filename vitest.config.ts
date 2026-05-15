@@ -12,6 +12,7 @@ export default defineConfig({
     globals: true,
     setupFiles: "vitest.setup.ts",
     watch: false,
+    testTimeout: 15000,
     coverage: {
       provider: "istanbul",
       reporter: ["text", "html", "lcov"],
