@@ -9,9 +9,74 @@ export interface CachedWebPageContext extends WebPageContext {
 
 let cachedWebPageContext: CachedWebPageContext | null = null
 
+function toAbsoluteUrl(value: string | null | undefined, baseUrl: string): string | null {
+  if (!value?.trim()) {
+    return null
+  }
+
+  try {
+    return new URL(value.trim(), baseUrl).href
+  }
+  catch {
+    return null
+  }
+}
+
+function ensureSnapshotHead(doc: Document): HTMLHeadElement {
+  if (doc.head) {
+    return doc.head
+  }
+
+  const head = doc.createElement("head")
+  doc.documentElement.insertBefore(head, doc.body ?? null)
+  return head
+}
+
+function normalizeUrlAttribute(doc: Document, selector: string, attributeName: string, baseUrl: string) {
+  doc.querySelectorAll(selector).forEach((element) => {
+    const normalized = toAbsoluteUrl(element.getAttribute(attributeName), baseUrl)
+    if (normalized) {
+      element.setAttribute(attributeName, normalized)
+      return
+    }
+
+    element.removeAttribute(attributeName)
+  })
+}
+
+function ensureSnapshotPageUrl(doc: Document, pageUrl: string) {
+  const head = ensureSnapshotHead(doc)
+  let meta = head.querySelector("meta[property=\"og:url\"]")
+  if (!meta) {
+    meta = doc.createElement("meta")
+    meta.setAttribute("property", "og:url")
+    head.prepend(meta)
+  }
+
+  meta.setAttribute("content", toAbsoluteUrl(meta.getAttribute("content"), pageUrl) ?? pageUrl)
+}
+
+function normalizeSnapshotMetadataUrls(doc: Document, baseUrl: string) {
+  const head = ensureSnapshotHead(doc)
+  let base = head.querySelector("base[href]")
+  if (!base) {
+    base = doc.createElement("base")
+    head.prepend(base)
+  }
+
+  const metadataBaseUrl = toAbsoluteUrl(base.getAttribute("href"), baseUrl) ?? baseUrl
+  base.setAttribute("href", metadataBaseUrl)
+  normalizeUrlAttribute(doc, "link[rel~=\"canonical\"][href]", "href", metadataBaseUrl)
+  normalizeUrlAttribute(doc, "meta[property=\"og:url\"][content]", "content", metadataBaseUrl)
+  normalizeUrlAttribute(doc, "meta[name=\"twitter:url\"][content]", "content", metadataBaseUrl)
+  ensureSnapshotPageUrl(doc, baseUrl)
+}
+
 function createDefuddleSnapshotDocument() {
   const clonedDoc = document.implementation.createHTMLDocument(document.title)
-  clonedDoc.documentElement.innerHTML = document.documentElement.outerHTML
+  const clonedDocumentElement = document.documentElement.cloneNode(true)
+  clonedDoc.replaceChild(clonedDoc.importNode(clonedDocumentElement, true), clonedDoc.documentElement)
+  normalizeSnapshotMetadataUrls(clonedDoc, window.location.href)
   return clonedDoc
 }
 

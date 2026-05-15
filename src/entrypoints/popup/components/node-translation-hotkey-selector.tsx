@@ -1,47 +1,8 @@
-import { i18n } from "#imports"
 import { deepmerge } from "deepmerge-ts"
 import { useAtom } from "jotai"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/base-ui/select"
+import { NodeTranslationHotkeyControl } from "@/components/node-translation-hotkey-control"
 import { Switch } from "@/components/ui/base-ui/switch"
 import { configFieldsAtomMap } from "@/utils/atoms/config"
-import { HOTKEY_ICONS, HOTKEYS } from "@/utils/constants/hotkeys"
-
-function HotkeyDisplay({ hotkey }: { hotkey: typeof HOTKEYS[number] }) {
-  const icon = HOTKEY_ICONS[hotkey]
-  const label = i18n.t(`hotkey.${hotkey}`)
-
-  if (hotkey === "clickAndHold") {
-    return (
-      <>
-        {icon}
-        {" "}
-        {label}
-        {" "}
-        {i18n.t("popup.translateParagraph")}
-      </>
-    )
-  }
-
-  return (
-    <>
-      {i18n.t("popup.hover")}
-      {" "}
-      +
-      {" "}
-      {icon}
-      {" "}
-      {label}
-      {" "}
-      {i18n.t("popup.translateParagraph")}
-    </>
-  )
-}
 
 export default function NodeTranslationHotkeySelector() {
   const [translateConfig, setTranslateConfig] = useAtom(
@@ -54,31 +15,14 @@ export default function NodeTranslationHotkeySelector() {
 
   return (
     <div className="flex items-center justify-between gap-2">
-      <Select
-        value={translateConfig.node.hotkey}
-        onValueChange={(value: typeof HOTKEYS[number] | null) => {
-          if (value)
-            void setTranslateConfig(deepmerge(translateConfig, { node: { hotkey: value } }))
+      <NodeTranslationHotkeyControl
+        hotkey={translateConfig.node.hotkey}
+        compact
+        className="min-w-0 flex-1 text-[13px] font-medium"
+        onChange={(hotkey) => {
+          void setTranslateConfig(deepmerge(translateConfig, { node: { hotkey } }))
         }}
-      >
-        <SelectTrigger
-          size="sm"
-          className="pt-3.5 -mt-3.5 pb-4 -mb-4 px-2 -ml-2 h-5! ring-none cursor-pointer truncate border-none text-[13px] font-medium shadow-none focus-visible:border-none focus-visible:ring-0 bg-transparent! rounded-md"
-        >
-          <div className="truncate">
-            <HotkeyDisplay hotkey={translateConfig.node.hotkey} />
-          </div>
-        </SelectTrigger>
-        <SelectContent className="min-w-fit">
-          <SelectGroup>
-            {HOTKEYS.map(item => (
-              <SelectItem key={item} value={item}>
-                <HotkeyDisplay hotkey={item} />
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+      />
       <Switch
         checked={translateConfig.node.enabled}
         onCheckedChange={checked => void handleNodeTranslationEnabledChange(checked)}

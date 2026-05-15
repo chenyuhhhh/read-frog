@@ -6,10 +6,14 @@ import { getLocalConfig } from "@/utils/config/storage"
 import { APP_NAME } from "@/utils/constants/app"
 import { CONFIG_STORAGE_KEY } from "@/utils/constants/config"
 import { onMessage, sendMessage } from "@/utils/message"
+import { isWebExtensionRuntimeAvailable } from "@/utils/web-extension-environment"
 
 export default defineContentScript({
   matches: env.WXT_OFFICIAL_SITE_ORIGINS.map((origin: string) => `${origin}/*`),
   async main() {
+    if (!isWebExtensionRuntimeAvailable())
+      return
+
     onMessage("pinStateChanged", (msg) => {
       window.postMessage({ source: `${kebabCase(APP_NAME)}-ext`, ...msg }, "*")
     })

@@ -1,6 +1,7 @@
 import type { FloatingButtonSide } from "@/types/config/floating-button"
 import { browser, i18n } from "#imports"
-import { IconLock, IconLockOpen, IconSettings, IconX } from "@tabler/icons-react"
+import { Icon } from "@iconify/react"
+import { IconCheck, IconLock, IconLockOpen, IconSettings, IconX } from "@tabler/icons-react"
 import { useAtom, useAtomValue } from "jotai"
 import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
@@ -15,6 +16,7 @@ import { ANALYTICS_FEATURE, ANALYTICS_SURFACE } from "@/types/analytics"
 import { createFeatureUsageContext } from "@/utils/analytics"
 import { configFieldsAtomMap } from "@/utils/atoms/config"
 import { APP_NAME } from "@/utils/constants/app"
+import { getImmersiveReadingPatternForLocation, isImmersiveReadingEnabledForUrl } from "@/utils/immersive-reading"
 import { sendMessage } from "@/utils/message"
 import { cn } from "@/utils/styles/utils"
 import { matchDomainPattern } from "@/utils/url"
@@ -360,6 +362,12 @@ export default function FloatingButton() {
           expanded={isFloatingButtonExpanded}
         />
       )}
+      {!isDraggingButton && (
+        <ImmersiveReadingButton
+          side={floatingButtonSide}
+          expanded={isFloatingButtonExpanded}
+        />
+      )}
       <div className="relative">
         <div
           ref={mainButtonRef}
@@ -411,9 +419,25 @@ export default function FloatingButton() {
         <HiddenButton
           side={floatingButtonSide}
           expanded={isFloatingButtonExpanded}
+          ariaLabel={i18n.t("options.sidebar.settings")}
+          title={i18n.t("options.sidebar.settings")}
           icon={<IconSettings className="h-5 w-5" />}
           onClick={() => {
             void sendMessage("openOptionsPage", undefined)
+          }}
+        />
+      )}
+      {!isDraggingButton && (
+        <HiddenButton
+          side={floatingButtonSide}
+          expanded={isFloatingButtonExpanded}
+          ariaLabel={i18n.t("vocabularyNotebook.title")}
+          title={i18n.t("vocabularyNotebook.title")}
+          icon={<Icon icon="tabler:bookmarks" className="h-5 w-5" />}
+          onClick={() => {
+            void sendMessage("openPage", {
+              url: browser.runtime.getURL("/options.html#/vocabulary-notebook"),
+            })
           }}
         />
       )}
@@ -526,5 +550,50 @@ function FloatingButtonLockControl({ expanded, side }: FloatingButtonLockControl
         ? <IconLock className="h-3 w-3" strokeWidth={3} />
         : <IconLockOpen className="h-3 w-3" strokeWidth={3} />}
     </button>
+  )
+}
+
+interface ImmersiveReadingButtonProps {
+  expanded: boolean
+  side: FloatingButtonSide
+}
+
+function ImmersiveReadingButton({ expanded, side }: ImmersiveReadingButtonProps) {
+  const [immersiveReading, setImmersiveReading] = useAtom(configFieldsAtomMap.immersiveReading)
+  const currentPattern = getImmersiveReadingPatternForLocation()
+  const enabled = isImmersiveReadingEnabledForUrl(immersiveReading.enabledPatterns)
+
+  const handleToggle = () => {
+    const currentPatterns = immersiveReading.enabledPatterns
+    const nextPatterns = enabled
+      ? currentPatterns.filter(pattern => pattern !== currentPattern)
+      : [...currentPatterns.filter(pattern => pattern !== currentPattern), currentPattern]
+
+    void setImmersiveReading({
+      ...immersiveReading,
+      enabledPatterns: nextPatterns,
+    })
+  }
+
+  const label = enabled
+    ? i18n.t("sideContent.floatingButton.disableImmersiveReading")
+    : i18n.t("sideContent.floatingButton.enableImmersiveReading")
+
+  return (
+    <HiddenButton
+      side={side}
+      expanded={expanded}
+      ariaLabel={label}
+      title={label}
+      icon={<Icon icon={enabled ? "tabler:book-2" : "tabler:book"} className="h-5 w-5" />}
+      onClick={handleToggle}
+    >
+      <IconCheck
+        className={cn(
+          "absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full bg-green-500 text-white",
+          enabled ? "block" : "hidden",
+        )}
+      />
+    </HiddenButton>
   )
 }

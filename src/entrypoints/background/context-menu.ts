@@ -5,7 +5,9 @@ import { ANALYTICS_FEATURE, ANALYTICS_SURFACE } from "@/types/analytics"
 import { createFeatureUsageContext } from "@/utils/analytics"
 import { CONFIG_STORAGE_KEY } from "@/utils/constants/config"
 import { getTranslationStateKey, TRANSLATION_STATE_KEY_PREFIX } from "@/utils/constants/storage-keys"
+import { logger } from "@/utils/logger"
 import { sendMessage } from "@/utils/message"
+import { isOptionalReceiverMessageError } from "@/utils/message-errors"
 import { ensureInitializedConfig } from "./config"
 import { getPageTranslationEnabled, setPageTranslationEnabled } from "./page-translation-state"
 
@@ -201,6 +203,10 @@ async function handleTranslateClick(tabId: number) {
   if (!newState) {
     await setPageTranslationEnabled(tabId, false)
     void sendMessage("notifyTranslationStateChanged", { enabled: false }, tabId)
+      .catch((error) => {
+        if (!isOptionalReceiverMessageError(error))
+          logger.warn("Failed to notify page translation state change from context menu", error)
+      })
   }
 
   // Notify content script in that specific tab
@@ -210,6 +216,10 @@ async function handleTranslateClick(tabId: number) {
       ? createFeatureUsageContext(ANALYTICS_FEATURE.PAGE_TRANSLATION, ANALYTICS_SURFACE.CONTEXT_MENU)
       : undefined,
   }, tabId)
+    .catch((error) => {
+      if (!isOptionalReceiverMessageError(error))
+        logger.warn("Failed to ask page translation manager to toggle from context menu", error)
+    })
 
   // Update menu title immediately
   await updateTranslateMenuTitle(tabId, newState)

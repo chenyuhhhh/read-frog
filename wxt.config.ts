@@ -1,3 +1,4 @@
+import type { Plugin } from "vite"
 import path from "node:path"
 import process from "node:process"
 import { defineConfig } from "wxt"
@@ -10,6 +11,67 @@ const ALLOWED_BUNDLED_API_KEYS = new Set([
 ])
 const useLocalPackages = isLocalPackagesEnabled(process.env)
 const shouldSkipEnvValidation = process.env.WXT_SKIP_ENV_VALIDATION === "true"
+
+type JavaScriptBundleOutput
+  = | { type: "chunk", code: string }
+    | { type: "asset", fileName: string, source: string | Uint8Array }
+
+function escapeNonAsciiJavaScript(code: string) {
+  let escapedCode = ""
+
+  for (const char of code) {
+    const codePoint = char.codePointAt(0)
+    if (codePoint == null || codePoint <= 0x7F) {
+      escapedCode += char
+      continue
+    }
+
+    if (codePoint <= 0xFFFF) {
+      escapedCode += `\\u${codePoint.toString(16).padStart(4, "0")}`
+      continue
+    }
+
+    escapedCode += `\\u{${codePoint.toString(16)}}`
+  }
+
+  return escapedCode
+}
+
+function isJavaScriptBundleOutput(output: unknown): output is JavaScriptBundleOutput {
+  if (typeof output !== "object" || output == null || !("type" in output))
+    return false
+
+  if (output.type === "chunk")
+    return "code" in output && typeof output.code === "string"
+
+  if (output.type === "asset") {
+    return "fileName" in output
+      && typeof output.fileName === "string"
+      && "source" in output
+      && (typeof output.source === "string" || output.source instanceof Uint8Array)
+  }
+
+  return false
+}
+
+function asciiOnlyJavaScriptBundlePlugin(): Plugin {
+  return {
+    name: "ascii-only-javascript-bundle",
+    generateBundle(_options: unknown, bundle: Record<string, unknown>) {
+      for (const output of Object.values(bundle)) {
+        if (!isJavaScriptBundleOutput(output))
+          continue
+
+        if (output.type === "chunk") {
+          output.code = escapeNonAsciiJavaScript(output.code)
+        }
+        else if (output.fileName.endsWith(".js") && typeof output.source === "string") {
+          output.source = escapeNonAsciiJavaScript(output.source)
+        }
+      }
+    },
+  }
+}
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
@@ -87,6 +149,7 @@ export default defineConfig({
   },
   vite: configEnv => ({
     plugins: [
+      asciiOnlyJavaScriptBundlePlugin(),
       ...(configEnv.mode === "production"
         ? [
             {

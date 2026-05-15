@@ -13,6 +13,37 @@ sidePanel:
   firefoxUserActionHint: В Firefox откройте Read Frog из боковой панели браузера.
   firefoxUserActionHelpText: Как открыть боковую панель Firefox
   firefoxUserActionHelpUrl: https://support.mozilla.org/ru/kb/ispolzovanije-bokovoi-paneli-dostup-instrumenty-i-vertikalnyje-vkladki
+sideContent:
+  floatingButton:
+    enableImmersiveReading: Enable immersive reading
+    disableImmersiveReading: Disable immersive reading
+vocabularyNotebook:
+  title: Словарь
+  description: Слова, сохраненные из словаря, хранятся локально на этом устройстве.
+  add: Добавить в словарь
+  remove: Удалить из словаря
+  unavailable: Результат словаря еще не готов
+  saved: Добавлено в словарь
+  removed: Удалено из словаря
+  updateFailed: Не удалось обновить словарь
+  deleted: Слово удалено
+  searchPlaceholder: Поиск слов, определений или контекста
+  loading: Загрузка слов...
+  emptyTitle: Сохраненных слов пока нет
+  emptyDescription: Откройте словарь на панели выделения и включите звезду, чтобы сохранить слово.
+  noSearchResults: Совпадающих слов нет
+  noSearchResultsDescription: Попробуйте другой поисковый запрос.
+  term: Слово
+  definition: Определение
+  context: Контекст
+  contextTranslation: Перевод контекста
+  selectionText: Выделенный текст
+  source: Источник
+  createdAt: Создано
+  updatedAt: Обновлено
+  actions: Действия
+  viewDetails: Посмотреть сведения о "$1"
+  delete: Удалить слово
 popup:
   theme: Тема
   autoLang: Авто
@@ -882,6 +913,9 @@ thinking:
   collapse: Свернуть размышление
 shortcutKeySelector:
   placeholder: Пожалуйста, введите горячую клавишу
+nodeTranslationHotkeyRecorder:
+  record: Record shortcut
+  recording: Recording shortcut
 subtitles:
   actions:
     downloadSource: Скачать исходные субтитры
@@ -911,6 +945,8 @@ hotkey:
   shift: Shift
   backtick: Обратный апостроф
   clickAndHold: Нажмите и удерживайте
+  mouseButton4: Mouse Back Button
+  mouseButton5: Mouse Forward Button
 translationHub:
   searchLanguages: Поиск языков...
   noLanguagesFound: Языки не найдены

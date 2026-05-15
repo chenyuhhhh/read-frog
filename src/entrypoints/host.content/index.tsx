@@ -2,6 +2,7 @@ import "@/utils/zod-config"
 import { defineContentScript } from "#imports"
 import { getLocalConfig } from "@/utils/config/storage"
 import { clearEffectiveSiteControlUrl, getEffectiveSiteControlUrl, isSiteEnabled } from "@/utils/site-control"
+import { isWebExtensionRuntimeAvailable } from "@/utils/web-extension-environment"
 
 declare global {
   interface Window {
@@ -13,6 +14,9 @@ export default defineContentScript({
   matches: ["*://*/*", "file:///*"],
   cssInjectionMode: "manual",
   async main(ctx) {
+    if (!isWebExtensionRuntimeAvailable())
+      return
+
     // Prevent double injection (manifest-based + programmatic injection)
     if (window.__READ_FROG_HOST_INJECTED__)
       return

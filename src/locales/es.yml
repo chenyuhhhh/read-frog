@@ -13,6 +13,37 @@ sidePanel:
   firefoxUserActionHint: En Firefox, abre Read Frog desde la barra lateral del navegador.
   firefoxUserActionHelpText: Aprende a abrir la barra lateral de Firefox
   firefoxUserActionHelpUrl: https://support.mozilla.org/en-US/kb/use-sidebar-access-tools-and-vertical-tabs
+sideContent:
+  floatingButton:
+    enableImmersiveReading: Enable immersive reading
+    disableImmersiveReading: Disable immersive reading
+vocabularyNotebook:
+  title: Cuaderno de vocabulario
+  description: Las palabras guardadas desde el diccionario se almacenan localmente en este dispositivo.
+  add: Añadir al cuaderno de vocabulario
+  remove: Quitar del cuaderno de vocabulario
+  unavailable: El resultado del diccionario aún no está listo
+  saved: Añadido al cuaderno de vocabulario
+  removed: Quitado del cuaderno de vocabulario
+  updateFailed: No se pudo actualizar el cuaderno de vocabulario
+  deleted: Palabra eliminada
+  searchPlaceholder: Buscar palabras, definiciones o contexto
+  loading: Cargando vocabulario...
+  emptyTitle: Aún no hay palabras guardadas
+  emptyDescription: Abre el Diccionario desde la barra de selección y enciende la estrella para guardar una palabra.
+  noSearchResults: No hay palabras coincidentes
+  noSearchResultsDescription: Prueba con otro término de búsqueda.
+  term: Término
+  definition: Definición
+  context: Contexto
+  contextTranslation: Traducción del contexto
+  selectionText: Texto seleccionado
+  source: Fuente
+  createdAt: Creado
+  updatedAt: Actualizado
+  actions: Acciones
+  viewDetails: Ver detalles de "$1"
+  delete: Eliminar palabra
 popup:
   theme: Tema
   autoLang: Auto
@@ -997,6 +1028,9 @@ thinking:
   collapse: Contraer razonamiento
 shortcutKeySelector:
   placeholder: Introduce el atajo
+nodeTranslationHotkeyRecorder:
+  record: Record shortcut
+  recording: Recording shortcut
 subtitles:
   actions:
     downloadSource: Descargar subtítulos de origen
@@ -1026,6 +1060,8 @@ hotkey:
   shift: Mayús
   backtick: Acento grave
   clickAndHold: Hacer clic y mantener
+  mouseButton4: Mouse Back Button
+  mouseButton5: Mouse Forward Button
 translationHub:
   searchLanguages: Buscar idiomas...
   noLanguagesFound: No se encontraron idiomas

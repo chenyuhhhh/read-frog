@@ -3,13 +3,19 @@ import type { Config } from "@/types/config/config"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { registerNodeTranslationTriggerListeners } from "../node-translation-trigger"
 
-function createConfig(hotkey: Config["translate"]["node"]["hotkey"]): Config {
+function createConfig(
+  hotkey: Config["translate"]["node"]["hotkey"],
+  immersiveReadingPatterns: string[] = [],
+): Config {
   return {
     translate: {
       node: {
         enabled: true,
         hotkey,
       },
+    },
+    immersiveReading: {
+      enabledPatterns: immersiveReadingPatterns,
     },
   } as Config
 }
@@ -18,8 +24,13 @@ function dispatchKeyboardEvent(type: "keydown" | "keyup", key: string) {
   document.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }))
 }
 
-function dispatchMouseEvent(type: "mousemove" | "mouseover" | "mousedown" | "mouseup", init: MouseEventInit) {
-  document.dispatchEvent(new MouseEvent(type, { bubbles: true, ...init }))
+function dispatchMouseEvent(
+  type: "mousemove" | "mouseover" | "mousedown" | "mouseup" | "auxclick" | "pointerdown" | "pointerup",
+  init: MouseEventInit,
+) {
+  const event = new MouseEvent(type, { bubbles: true, cancelable: true, ...init })
+  document.dispatchEvent(event)
+  return event
 }
 
 describe("registerNodeTranslationTriggerListeners", () => {
@@ -154,6 +165,238 @@ describe("registerNodeTranslationTriggerListeners", () => {
         }),
       }),
     )
+  })
+
+  it("triggers mouse side button node translation and blocks navigation during immersive reading", async () => {
+    const onTrigger = vi.fn()
+    const config = createConfig("mouseButton4", [window.location.hostname])
+
+    teardown = registerNodeTranslationTriggerListeners({
+      getConfig: () => Promise.resolve(config),
+      getCachedConfig: () => config,
+      onTrigger,
+    })
+
+    const event = dispatchMouseEvent("mousedown", { button: 3, clientX: 30, clientY: 40 })
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(onTrigger).toHaveBeenCalledWith(
+      { x: 30, y: 40 },
+      expect.objectContaining({
+        translate: expect.objectContaining({
+          node: expect.objectContaining({ hotkey: "mouseButton4" }),
+        }),
+      }),
+    )
+  })
+
+  it("blocks every Chrome side-button navigation event and triggers once when the side button is the hotkey during immersive reading", async () => {
+    const onTrigger = vi.fn()
+    const config = createConfig("mouseButton4", [window.location.hostname])
+
+    teardown = registerNodeTranslationTriggerListeners({
+      getConfig: () => Promise.resolve(config),
+      getCachedConfig: () => config,
+      onTrigger,
+    })
+
+    const events = [
+      dispatchMouseEvent("pointerdown", { button: 3, clientX: 30, clientY: 40 }),
+      dispatchMouseEvent("mouseup", { button: 3, clientX: 30, clientY: 40 }),
+      dispatchMouseEvent("pointerup", { button: 3, clientX: 30, clientY: 40 }),
+      dispatchMouseEvent("auxclick", { button: 3, clientX: 30, clientY: 40 }),
+    ]
+
+    expect(events.every(event => event.defaultPrevented)).toBe(true)
+    expect(onTrigger).toHaveBeenCalledTimes(1)
+    expect(onTrigger).toHaveBeenCalledWith(
+      { x: 30, y: 40 },
+      expect.objectContaining({
+        translate: expect.objectContaining({
+          node: expect.objectContaining({ hotkey: "mouseButton4" }),
+        }),
+      }),
+    )
+  })
+
+  it("does not trigger side button translation twice when pointerdown is followed by mousedown", async () => {
+    const onTrigger = vi.fn()
+    const config = createConfig("mouseButton4", [window.location.hostname])
+
+    teardown = registerNodeTranslationTriggerListeners({
+      getConfig: () => Promise.resolve(config),
+      getCachedConfig: () => config,
+      onTrigger,
+    })
+
+    const pointerDown = dispatchMouseEvent("pointerdown", { button: 3, clientX: 30, clientY: 40 })
+    const mouseDown = dispatchMouseEvent("mousedown", { button: 3, clientX: 31, clientY: 41 })
+
+    expect(pointerDown.defaultPrevented).toBe(true)
+    expect(mouseDown.defaultPrevented).toBe(true)
+    expect(onTrigger).toHaveBeenCalledTimes(1)
+    expect(onTrigger).toHaveBeenCalledWith(
+      { x: 30, y: 40 },
+      expect.objectContaining({
+        translate: expect.objectContaining({
+          node: expect.objectContaining({ hotkey: "mouseButton4" }),
+        }),
+      }),
+    )
+  })
+
+  it("triggers mouse side button translation from the buttons bitmask during immersive reading", async () => {
+    const onTrigger = vi.fn()
+    const config = createConfig("mouseButton4", [window.location.hostname])
+
+    teardown = registerNodeTranslationTriggerListeners({
+      getConfig: () => Promise.resolve(config),
+      getCachedConfig: () => config,
+      onTrigger,
+    })
+
+    const event = dispatchMouseEvent("pointerdown", { button: 0, buttons: 8, clientX: 30, clientY: 40 })
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(onTrigger).toHaveBeenCalledWith(
+      { x: 30, y: 40 },
+      expect.objectContaining({
+        translate: expect.objectContaining({
+          node: expect.objectContaining({ hotkey: "mouseButton4" }),
+        }),
+      }),
+    )
+  })
+
+  it("triggers once when the browser only emits side-button release events during immersive reading", async () => {
+    const onTrigger = vi.fn()
+    const config = createConfig("mouseButton4", [window.location.hostname])
+
+    teardown = registerNodeTranslationTriggerListeners({
+      getConfig: () => Promise.resolve(config),
+      getCachedConfig: () => config,
+      onTrigger,
+    })
+
+    const mouseUp = dispatchMouseEvent("mouseup", { button: 3, clientX: 30, clientY: 40 })
+    const auxClick = dispatchMouseEvent("auxclick", { button: 3, clientX: 30, clientY: 40 })
+
+    expect(mouseUp.defaultPrevented).toBe(true)
+    expect(auxClick.defaultPrevented).toBe(true)
+    expect(onTrigger).toHaveBeenCalledTimes(1)
+  })
+
+  it("uses the latest hovered position when a side-button event has no useful coordinates", async () => {
+    const onTrigger = vi.fn()
+    const config = createConfig("mouseButton4", [window.location.hostname])
+
+    teardown = registerNodeTranslationTriggerListeners({
+      getConfig: () => Promise.resolve(config),
+      getCachedConfig: () => config,
+      onTrigger,
+    })
+
+    dispatchMouseEvent("mouseover", { clientX: 70, clientY: 80 })
+    dispatchMouseEvent("pointerdown", { button: 3, clientX: 0, clientY: 0 })
+
+    expect(onTrigger).toHaveBeenCalledWith(
+      { x: 70, y: 80 },
+      expect.objectContaining({
+        translate: expect.objectContaining({
+          node: expect.objectContaining({ hotkey: "mouseButton4" }),
+        }),
+      }),
+    )
+  })
+
+  it("blocks side button navigation during immersive reading without translating", async () => {
+    const onTrigger = vi.fn()
+    const config = createConfig("control", [window.location.hostname])
+
+    teardown = registerNodeTranslationTriggerListeners({
+      getConfig: () => Promise.resolve(config),
+      getCachedConfig: () => config,
+      onTrigger,
+    })
+
+    const event = dispatchMouseEvent("mousedown", { button: 3, clientX: 30, clientY: 40 })
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(onTrigger).not.toHaveBeenCalled()
+  })
+
+  it("blocks every Chrome side-button navigation event during immersive reading", async () => {
+    const onTrigger = vi.fn()
+    const config = createConfig("control", [window.location.hostname])
+
+    teardown = registerNodeTranslationTriggerListeners({
+      getConfig: () => Promise.resolve(config),
+      getCachedConfig: () => config,
+      onTrigger,
+    })
+
+    const events = [
+      dispatchMouseEvent("pointerdown", { button: 3, clientX: 30, clientY: 40 }),
+      dispatchMouseEvent("mouseup", { button: 3, clientX: 30, clientY: 40 }),
+      dispatchMouseEvent("pointerup", { button: 3, clientX: 30, clientY: 40 }),
+      dispatchMouseEvent("auxclick", { button: 3, clientX: 30, clientY: 40 }),
+    ]
+
+    expect(events.every(event => event.defaultPrevented)).toBe(true)
+    expect(onTrigger).not.toHaveBeenCalled()
+  })
+
+  it("does not block side button navigation when immersive reading is off and the side button is not the hotkey", async () => {
+    const onTrigger = vi.fn()
+    const config = createConfig("control")
+
+    teardown = registerNodeTranslationTriggerListeners({
+      getConfig: () => Promise.resolve(config),
+      getCachedConfig: () => config,
+      onTrigger,
+    })
+
+    const event = dispatchMouseEvent("mousedown", { button: 3, clientX: 30, clientY: 40 })
+
+    expect(event.defaultPrevented).toBe(false)
+    expect(onTrigger).not.toHaveBeenCalled()
+  })
+
+  it("does not block or trigger a configured side button hotkey when immersive reading is off", async () => {
+    const onTrigger = vi.fn()
+    const config = createConfig("mouseButton4")
+
+    teardown = registerNodeTranslationTriggerListeners({
+      getConfig: () => Promise.resolve(config),
+      getCachedConfig: () => config,
+      onTrigger,
+    })
+
+    const forward = dispatchMouseEvent("mousedown", { button: 3, clientX: 30, clientY: 40 })
+    const backward = dispatchMouseEvent("mousedown", { button: 4, clientX: 30, clientY: 40 })
+
+    expect(forward.defaultPrevented).toBe(false)
+    expect(backward.defaultPrevented).toBe(false)
+    expect(onTrigger).not.toHaveBeenCalled()
+  })
+
+  it("blocks side button navigation in editable targets without translating", async () => {
+    const onTrigger = vi.fn()
+    const config = createConfig("mouseButton4", [window.location.hostname])
+    const input = document.createElement("input")
+    document.body.append(input)
+
+    teardown = registerNodeTranslationTriggerListeners({
+      getConfig: () => Promise.resolve(config),
+      getCachedConfig: () => config,
+      onTrigger,
+    })
+
+    const event = new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 3, clientX: 30, clientY: 40 })
+    input.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(onTrigger).not.toHaveBeenCalled()
   })
 
   it("does not trigger while the caller says the event should be ignored", async () => {

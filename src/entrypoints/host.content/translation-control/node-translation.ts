@@ -1,6 +1,7 @@
 import type { Config } from "@/types/config/config"
+import { storageAdapter } from "@/utils/atoms/storage-adapter"
 import { getLocalConfig } from "@/utils/config/storage"
-import { DEFAULT_CONFIG } from "@/utils/constants/config"
+import { CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from "@/utils/constants/config"
 import { removeOrShowNodeTranslation } from "@/utils/host/translate/node-manipulation"
 import { sendMessage } from "@/utils/message"
 import { registerNodeTranslationTriggerListeners } from "./node-translation-trigger"
@@ -15,13 +16,21 @@ import { registerNodeTranslationTriggerListeners } from "./node-translation-trig
 export function registerNodeTranslationTriggers(): () => void {
   const ac = new AbortController()
   const { signal } = ac
+  let cachedConfig: Config | null = null
 
   const getCurrentConfig = async (): Promise<Config | null> => {
     const config = await getLocalConfig()
     if (signal.aborted)
       return null
-    return config ?? DEFAULT_CONFIG
+    cachedConfig = config ?? DEFAULT_CONFIG
+    return cachedConfig
   }
+
+  void getCurrentConfig()
+
+  const unwatchConfig = storageAdapter.watch<Config>(CONFIG_STORAGE_KEY, (config) => {
+    cachedConfig = config
+  })
 
   let hasRequestedIframeInjection = false
 
@@ -43,6 +52,7 @@ export function registerNodeTranslationTriggers(): () => void {
 
   const teardownTriggerListeners = registerNodeTranslationTriggerListeners({
     getConfig: getCurrentConfig,
+    getCachedConfig: () => cachedConfig,
     onTrigger: (point, config) => {
       void translateNode(point, config)
     },
@@ -51,6 +61,7 @@ export function registerNodeTranslationTriggers(): () => void {
   // Teardown: abort all listeners + cancel pending timers
   return () => {
     ac.abort()
+    unwatchConfig()
     teardownTriggerListeners()
   }
 }

@@ -6,6 +6,7 @@ import AiSegmentationCache from "./tables/ai-segmentation-cache"
 import ArticleSummaryCache from "./tables/article-summary-cache"
 import BatchRequestRecord from "./tables/batch-request-record"
 import TranslationCache from "./tables/translation-cache"
+import VocabularyEntry from "./tables/vocabulary-entry"
 
 export default class AppDB extends Dexie {
   translationCache!: EntityTable<
@@ -25,6 +26,11 @@ export default class AppDB extends Dexie {
 
   aiSegmentationCache!: EntityTable<
     AiSegmentationCache,
+    "key"
+  >
+
+  vocabularyEntries!: EntityTable<
+    VocabularyEntry,
     "key"
   >
 
@@ -81,9 +87,36 @@ export default class AppDB extends Dexie {
         key,
         createdAt`,
     })
+    this.version(5).stores({
+      translationCache: `
+        key,
+        translation,
+        createdAt`,
+      batchRequestRecord: `
+        key,
+        createdAt,
+        originalRequestCount,
+        provider,
+        model`,
+      articleSummaryCache: `
+        key,
+        createdAt`,
+      aiSegmentationCache: `
+        key,
+        createdAt`,
+      vocabularyEntries: `
+        key,
+        normalizedTerm,
+        term,
+        sourceCode,
+        targetCode,
+        createdAt,
+        updatedAt`,
+    })
     this.translationCache.mapToClass(TranslationCache)
     this.batchRequestRecord.mapToClass(BatchRequestRecord)
     this.articleSummaryCache.mapToClass(ArticleSummaryCache)
     this.aiSegmentationCache.mapToClass(AiSegmentationCache)
+    this.vocabularyEntries.mapToClass(VocabularyEntry)
   }
 }

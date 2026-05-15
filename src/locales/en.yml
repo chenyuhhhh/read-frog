@@ -13,6 +13,37 @@ sidePanel:
   firefoxUserActionHint: In Firefox, open Read Frog from the browser sidebar.
   firefoxUserActionHelpText: Learn how to open the Firefox sidebar
   firefoxUserActionHelpUrl: https://support.mozilla.org/en-US/kb/use-sidebar-access-tools-and-vertical-tabs
+sideContent:
+  floatingButton:
+    enableImmersiveReading: Enable immersive reading
+    disableImmersiveReading: Disable immersive reading
+vocabularyNotebook:
+  title: Vocabulary Notebook
+  description: Saved words from dictionary lookups are stored locally on this device.
+  add: Add to vocabulary notebook
+  remove: Remove from vocabulary notebook
+  unavailable: Dictionary result is not ready
+  saved: Added to vocabulary notebook
+  removed: Removed from vocabulary notebook
+  updateFailed: Failed to update vocabulary notebook
+  deleted: Word deleted
+  searchPlaceholder: Search words, definitions, or context
+  loading: Loading vocabulary...
+  emptyTitle: No saved words yet
+  emptyDescription: Open the Dictionary from the selection toolbar and light the star to save a word.
+  noSearchResults: No matching words
+  noSearchResultsDescription: Try a different search term.
+  term: Term
+  definition: Definition
+  context: Context
+  contextTranslation: Context translation
+  selectionText: Selected text
+  source: Source
+  createdAt: Created
+  updatedAt: Updated
+  actions: Actions
+  viewDetails: View details for "$1"
+  delete: Delete word
 popup:
   theme: Theme
   autoLang: Auto
@@ -997,6 +1028,9 @@ thinking:
   collapse: Collapse thinking
 shortcutKeySelector:
   placeholder: Please enter the shortcut
+nodeTranslationHotkeyRecorder:
+  record: Record shortcut
+  recording: Recording shortcut
 subtitles:
   actions:
     downloadSource: Download source subtitles
@@ -1026,6 +1060,8 @@ hotkey:
   shift: Shift
   backtick: Backtick
   clickAndHold: Click and hold
+  mouseButton4: Mouse Back Button
+  mouseButton5: Mouse Forward Button
 translationHub:
   searchLanguages: Search languages...
   noLanguagesFound: No languages found

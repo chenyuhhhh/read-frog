@@ -42,6 +42,7 @@ describe("background context menu", () => {
     browser.tabs.onUpdated.addListener = vi.fn()
     browser.storage.session.onChanged.addListener = vi.fn()
 
+    sendMessageMock.mockResolvedValue(undefined)
     storage.watch = vi.fn()
     storage.getItem = vi.fn().mockResolvedValue({ enabled: true })
     storage.setItem = vi.fn().mockResolvedValue(undefined)

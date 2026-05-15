@@ -13,6 +13,37 @@ sidePanel:
   firefoxUserActionHint: Firefox에서는 브라우저 사이드바에서 Read Frog를 열어 주세요.
   firefoxUserActionHelpText: Firefox 사이드바 여는 방법 보기
   firefoxUserActionHelpUrl: https://support.mozilla.org/ko/kb/use-sidebar-access-tools-and-vertical-tabs
+sideContent:
+  floatingButton:
+    enableImmersiveReading: Enable immersive reading
+    disableImmersiveReading: Disable immersive reading
+vocabularyNotebook:
+  title: 단어장
+  description: 사전에서 저장한 단어는 이 기기에 로컬로 저장됩니다.
+  add: 단어장에 추가
+  remove: 단어장에서 제거
+  unavailable: 사전 결과가 아직 준비되지 않았습니다
+  saved: 단어장에 추가했습니다
+  removed: 단어장에서 제거했습니다
+  updateFailed: 단어장 업데이트 실패
+  deleted: 단어를 삭제했습니다
+  searchPlaceholder: 단어, 뜻 또는 문맥 검색
+  loading: 단어를 불러오는 중...
+  emptyTitle: 저장된 단어가 없습니다
+  emptyDescription: 선택 툴바에서 사전을 열고 별을 켜면 단어를 저장할 수 있습니다.
+  noSearchResults: 일치하는 단어가 없습니다
+  noSearchResultsDescription: 다른 검색어를 시도해 보세요.
+  term: 단어
+  definition: 뜻
+  context: 문맥
+  contextTranslation: 문맥 번역
+  selectionText: 선택한 텍스트
+  source: 출처
+  createdAt: 생성됨
+  updatedAt: 업데이트
+  actions: 작업
+  viewDetails: '"$1" 상세 보기'
+  delete: 단어 삭제
 popup:
   theme: 테마
   autoLang: 자동
@@ -882,6 +913,9 @@ thinking:
   collapse: 사고 접기
 shortcutKeySelector:
   placeholder: 단축키를 입력해 주세요
+nodeTranslationHotkeyRecorder:
+  record: Record shortcut
+  recording: Recording shortcut
 subtitles:
   actions:
     downloadSource: 원본 자막 다운로드
@@ -911,6 +945,8 @@ hotkey:
   shift: Shift
   backtick: 백틱
   clickAndHold: 클릭하고 길게 누르기
+  mouseButton4: Mouse Back Button
+  mouseButton5: Mouse Forward Button
 translationHub:
   searchLanguages: 언어 검색...
   noLanguagesFound: 언어를 찾을 수 없습니다

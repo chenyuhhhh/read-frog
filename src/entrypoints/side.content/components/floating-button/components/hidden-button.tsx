@@ -6,6 +6,8 @@ export default function HiddenButton({
   onClick,
   children,
   className,
+  ariaLabel,
+  title,
   side = "right",
   expanded = false,
 }: {
@@ -13,14 +15,18 @@ export default function HiddenButton({
   onClick: () => void
   children?: React.ReactNode
   className?: string
+  ariaLabel?: string
+  title?: string
   side?: FloatingButtonSide
   expanded?: boolean
 }) {
   return (
     <button
       type="button"
+      aria-label={ariaLabel}
+      title={title}
       className={cn(
-        "border-border cursor-pointer rounded-full border bg-white shadow-lg p-1.5 text-neutral-600 dark:text-neutral-400 transition-transform duration-300 hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800",
+        "border-border relative cursor-pointer rounded-full border bg-white shadow-lg p-1.5 text-neutral-600 dark:text-neutral-400 transition-transform duration-300 hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800",
         side === "right" ? "mr-2" : "ml-2",
         expanded
           ? "translate-x-0"

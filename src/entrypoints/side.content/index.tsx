@@ -20,6 +20,7 @@ import { insertShadowRootUIWrapperInto } from "@/utils/shadow-root"
 import { isSiteEnabled } from "@/utils/site-control"
 import { queryClient } from "@/utils/tanstack-query"
 import { getLocalThemeMode } from "@/utils/theme"
+import { isWebExtensionRuntimeAvailable } from "@/utils/web-extension-environment"
 import { addStyleToShadow, mirrorDynamicStyles, protectInternalStyles } from "../../utils/styles"
 import App from "./app"
 import { store } from "./atoms"
@@ -51,6 +52,9 @@ export default defineContentScript({
   matches: ["*://*/*", "file:///*"],
   cssInjectionMode: "ui",
   async main(ctx) {
+    if (!isWebExtensionRuntimeAvailable())
+      return
+
     const config = await getLocalConfig() ?? DEFAULT_CONFIG
 
     // Check global site control

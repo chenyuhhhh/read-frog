@@ -135,7 +135,6 @@ export function WhatsNewFooter() {
               src={embedUrl}
               className="aspect-video w-full"
               allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
               loading="eager"
               referrerPolicy="strict-origin-when-cross-origin"
             />

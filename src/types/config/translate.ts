@@ -1,8 +1,8 @@
 import { langCodeISO6393Schema } from "@read-frog/definitions"
 import { z } from "zod"
-import { HOTKEYS } from "@/utils/constants/hotkeys"
 import { MAX_PRELOAD_MARGIN, MAX_PRELOAD_THRESHOLD, MIN_BATCH_CHARACTERS, MIN_BATCH_ITEMS, MIN_CHARACTERS_PER_NODE, MIN_PRELOAD_MARGIN, MIN_PRELOAD_THRESHOLD, MIN_TRANSLATE_CAPACITY, MIN_TRANSLATE_RATE, MIN_WORDS_PER_NODE } from "@/utils/constants/translate"
 import { TRANSLATION_NODE_STYLE } from "@/utils/constants/translation-node-style"
+import { isValidConfiguredNodeTranslationHotkey } from "@/utils/node-translation-hotkey"
 import { isPageTranslationShortcutEmpty, isValidConfiguredPageTranslationShortcut } from "@/utils/page-translation-shortcut"
 
 export const requestQueueConfigSchema = z.object({
@@ -84,12 +84,21 @@ export const pageTranslationShortcutSchema = z.string().superRefine((shortcut, c
   }
 })
 
+export const nodeTranslationHotkeySchema = z.string().superRefine((hotkey, ctx) => {
+  if (!isValidConfiguredNodeTranslationHotkey(hotkey)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Node translation hotkey must be a supported preset, keyboard key, or mouse side button.",
+    })
+  }
+})
+
 export const translateConfigSchema = z.object({
   providerId: z.string().nonempty(),
   mode: translationModeSchema,
   node: z.object({
     enabled: z.boolean(),
-    hotkey: z.enum(HOTKEYS),
+    hotkey: nodeTranslationHotkeySchema,
   }),
   page: z.object({
     range: pageTranslateRangeSchema,

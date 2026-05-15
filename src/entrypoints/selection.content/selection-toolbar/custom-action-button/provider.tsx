@@ -30,6 +30,7 @@ import {
   useCustomActionExecution,
   useCustomActionWebPageContext,
 } from "./use-custom-action-execution"
+import { VocabularyStarButton } from "./vocabulary-star-button"
 
 interface SelectionCustomActionPendingOpenRequest {
   actionId: string
@@ -369,6 +370,15 @@ export function SelectionCustomActionProvider({
               icon={activeAction?.icon ?? "tabler:sparkles"}
             />
             <div className="flex items-center gap-1">
+              {activeAction && (
+                <VocabularyStarButton
+                  action={activeAction}
+                  isRunning={displayedIsRunning}
+                  result={displayedResult}
+                  selectionText={selectionText}
+                  sourceTitle={titleText}
+                />
+              )}
               <SelectionPopover.Pin />
               <SelectionPopover.Close />
             </div>

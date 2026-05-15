@@ -1,14 +1,18 @@
 import type { Config } from "@/types/config/config"
 import type { Point } from "@/types/dom"
-import { HOTKEY_EVENT_KEYS } from "@/utils/constants/hotkeys"
+import { isImmersiveReadingEnabledForUrl } from "@/utils/immersive-reading"
+import { isClickAndHoldNodeTranslationHotkey, isMouseNodeTranslationHotkey, mouseEventToNodeTranslationHotkey, nodeTranslationHotkeyMatchesKeyboardEvent, nodeTranslationHotkeyMatchesMouseEvent } from "@/utils/node-translation-hotkey"
 
 const CLICK_AND_HOLD_TRIGGER_MS = 1000
 const CLICK_AND_HOLD_MOVE_TOLERANCE = 6
 const MOUSEMOVE_THROTTLE_MS = 300
 const MOUSEMOVE_DISTANCE_THRESHOLD = 3
+const MOUSE_SIDE_BUTTON_TRIGGER_DEDUP_MS = 350
+const MOUSE_SIDE_BUTTON_TRIGGER_EVENTS = new Set(["pointerdown", "mousedown", "pointerup", "mouseup", "auxclick"])
 
 export interface NodeTranslationTriggerOptions {
   getConfig: () => Promise<Config | null>
+  getCachedConfig?: () => Config | null
   onTrigger: (point: Point, config: Config) => void | Promise<void>
   shouldIgnoreEvent?: () => boolean
 }
@@ -33,6 +37,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
  */
 export function registerNodeTranslationTriggerListeners({
   getConfig,
+  getCachedConfig = () => null,
   onTrigger,
   shouldIgnoreEvent = () => false,
 }: NodeTranslationTriggerOptions): () => void {
@@ -83,12 +88,29 @@ export function registerNodeTranslationTriggerListeners({
   let clickAndHoldTriggered = false
   let mousePressPosition: Point | null = null
   let clickAndHoldTimerId: ReturnType<typeof setTimeout> | null = null
+  let activeMouseSideButtonTranslation: string | null = null
+  let activeMouseSideButtonTranslationTimer: ReturnType<typeof setTimeout> | null = null
 
   const clearClickAndHoldTimer = () => {
     if (clickAndHoldTimerId) {
       clearTimeout(clickAndHoldTimerId)
       clickAndHoldTimerId = null
     }
+  }
+
+  const clearActiveMouseSideButtonTranslationTimer = () => {
+    if (activeMouseSideButtonTranslationTimer) {
+      clearTimeout(activeMouseSideButtonTranslationTimer)
+      activeMouseSideButtonTranslationTimer = null
+    }
+  }
+
+  const resetActiveMouseSideButtonTranslationSoon = () => {
+    clearActiveMouseSideButtonTranslationTimer()
+    activeMouseSideButtonTranslationTimer = setTimeout(() => {
+      activeMouseSideButtonTranslation = null
+      activeMouseSideButtonTranslationTimer = null
+    }, MOUSE_SIDE_BUTTON_TRIGGER_DEDUP_MS)
   }
 
   const getCurrentConfig = async (): Promise<Config | null> => {
@@ -98,8 +120,80 @@ export function registerNodeTranslationTriggerListeners({
     return config
   }
 
+  const isImmersiveReadingEnabled = (config: Config): boolean => {
+    return isImmersiveReadingEnabledForUrl(config.immersiveReading?.enabledPatterns)
+  }
+
   const triggerNodeTranslation = (point: Point, config: Config) => {
     void onTrigger(point, config)
+  }
+
+  const blockMouseSideButtonNavigation = (event: MouseEvent | PointerEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    event.stopImmediatePropagation()
+  }
+
+  const shouldTriggerMouseSideButtonTranslation = (
+    event: MouseEvent | PointerEvent,
+    config: Config,
+    mouseHotkey: string,
+    immersiveReadingEnabled: boolean,
+  ): boolean => {
+    return immersiveReadingEnabled
+      && MOUSE_SIDE_BUTTON_TRIGGER_EVENTS.has(event.type)
+      && config.translate.node.enabled
+      && nodeTranslationHotkeyMatchesMouseEvent(config.translate.node.hotkey, event)
+      && activeMouseSideButtonTranslation !== mouseHotkey
+  }
+
+  const resolveMouseSideButtonTriggerPoint = (event: MouseEvent | PointerEvent): Point => {
+    const hoveredElement = getDeepestHoveredElement()
+    const hoveredPoint = hoveredElement ? getElementCenterPoint(hoveredElement) : null
+    if (hoveredPoint)
+      return hoveredPoint
+
+    if (hasMousePosition)
+      return { ...mousePosition }
+
+    return { x: event.clientX, y: event.clientY }
+  }
+
+  const handleMouseSideButton = (event: MouseEvent | PointerEvent) => {
+    if (shouldIgnoreEvent())
+      return
+
+    const mouseHotkey = mouseEventToNodeTranslationHotkey(event)
+    if (!mouseHotkey)
+      return
+
+    const config = getCachedConfig()
+    if (!config)
+      return
+
+    const isConfiguredMouseHotkey = config.translate.node.enabled
+      && nodeTranslationHotkeyMatchesMouseEvent(config.translate.node.hotkey, event)
+    const immersiveReadingEnabled = isImmersiveReadingEnabled(config)
+    const shouldBlockNavigation = immersiveReadingEnabled
+    const shouldTriggerTranslation = isConfiguredMouseHotkey
+      && shouldTriggerMouseSideButtonTranslation(event, config, mouseHotkey, immersiveReadingEnabled)
+
+    if (shouldBlockNavigation)
+      blockMouseSideButtonNavigation(event)
+
+    if (event.type === "pointerup" || event.type === "mouseup" || event.type === "auxclick") {
+      if (activeMouseSideButtonTranslation === mouseHotkey)
+        resetActiveMouseSideButtonTranslationSoon()
+    }
+
+    if (!shouldTriggerTranslation || isEditableTarget(event.target))
+      return
+
+    activeMouseSideButtonTranslation = mouseHotkey
+    resetActiveMouseSideButtonTranslationSoon()
+    const point = resolveMouseSideButtonTriggerPoint(event)
+    updateMousePosition(point)
+    triggerNodeTranslation(point, config)
   }
 
   document.addEventListener("mousemove", (event) => {
@@ -150,11 +244,18 @@ export function registerNodeTranslationTriggerListeners({
   document.addEventListener("mouseover", updateMousePositionFromEvent, { signal })
   document.addEventListener("pointerover", updateMousePositionFromEvent, { signal })
 
+  const sideButtonEventOptions = { signal, capture: true }
+  const sideButtonEventTypes = ["pointerdown", "pointerup", "mousedown", "mouseup", "auxclick"] as const
+  for (const type of sideButtonEventTypes) {
+    window.addEventListener(type, handleMouseSideButton, sideButtonEventOptions)
+    document.addEventListener(type, handleMouseSideButton, sideButtonEventOptions)
+  }
+
   let isHotkeyPressed = false
   let isHotkeySessionPure = true
   let timerId: ReturnType<typeof setTimeout> | null = null
   let actionTriggered = false
-  let activeHotkeyEventKey: string | null = null
+  let activeKeyboardHotkey: string | null = null
 
   const resetHotkeySession = () => {
     if (timerId) {
@@ -164,7 +265,7 @@ export function registerNodeTranslationTriggerListeners({
     isHotkeyPressed = false
     isHotkeySessionPure = true
     actionTriggered = false
-    activeHotkeyEventKey = null
+    activeKeyboardHotkey = null
   }
 
   document.addEventListener("mousedown", (event) => {
@@ -177,7 +278,7 @@ export function registerNodeTranslationTriggerListeners({
         return
 
       const config = await getCurrentConfig()
-      if (!config || !config.translate.node.enabled || config.translate.node.hotkey !== "clickAndHold")
+      if (!config || !config.translate.node.enabled || !isClickAndHoldNodeTranslationHotkey(config.translate.node.hotkey))
         return
 
       isMousePressed = true
@@ -193,7 +294,7 @@ export function registerNodeTranslationTriggerListeners({
             return
 
           const currentConfig = await getCurrentConfig()
-          if (!currentConfig || !currentConfig.translate.node.enabled || currentConfig.translate.node.hotkey !== "clickAndHold")
+          if (!currentConfig || !currentConfig.translate.node.enabled || !isClickAndHoldNodeTranslationHotkey(currentConfig.translate.node.hotkey))
             return
 
           triggerNodeTranslation(mousePressPosition, currentConfig)
@@ -225,17 +326,17 @@ export function registerNodeTranslationTriggerListeners({
         return
 
       const config = await getCurrentConfig()
-      if (!config || !config.translate.node.enabled || config.translate.node.hotkey === "clickAndHold") {
+      if (!config || !config.translate.node.enabled || isClickAndHoldNodeTranslationHotkey(config.translate.node.hotkey) || isMouseNodeTranslationHotkey(config.translate.node.hotkey)) {
         resetHotkeySession()
         return
       }
 
-      const hotkeyEventKey = HOTKEY_EVENT_KEYS[config.translate.node.hotkey]
+      const configuredHotkey = config.translate.node.hotkey
 
-      if (event.key === hotkeyEventKey) {
+      if (nodeTranslationHotkeyMatchesKeyboardEvent(configuredHotkey, event)) {
         if (!isHotkeyPressed) {
           isHotkeyPressed = true
-          activeHotkeyEventKey = hotkeyEventKey
+          activeKeyboardHotkey = configuredHotkey
           timerId = setTimeout(() => {
             void (async () => {
               if (shouldIgnoreEvent())
@@ -246,11 +347,11 @@ export function registerNodeTranslationTriggerListeners({
               }
 
               const currentConfig = await getCurrentConfig()
-              if (!currentConfig || !currentConfig.translate.node.enabled || currentConfig.translate.node.hotkey === "clickAndHold") {
+              if (!currentConfig || !currentConfig.translate.node.enabled || isClickAndHoldNodeTranslationHotkey(currentConfig.translate.node.hotkey) || isMouseNodeTranslationHotkey(currentConfig.translate.node.hotkey)) {
                 timerId = null
                 return
               }
-              if (HOTKEY_EVENT_KEYS[currentConfig.translate.node.hotkey] !== activeHotkeyEventKey) {
+              if (currentConfig.translate.node.hotkey !== activeKeyboardHotkey) {
                 timerId = null
                 return
               }
@@ -285,15 +386,17 @@ export function registerNodeTranslationTriggerListeners({
         return
 
       const config = await getCurrentConfig()
-      if (!config || !config.translate.node.enabled || config.translate.node.hotkey === "clickAndHold") {
-        if (event.key === activeHotkeyEventKey)
+      const isActiveHotkeyRelease = activeKeyboardHotkey
+        ? nodeTranslationHotkeyMatchesKeyboardEvent(activeKeyboardHotkey, event)
+        : false
+
+      if (!config || !config.translate.node.enabled || isClickAndHoldNodeTranslationHotkey(config.translate.node.hotkey) || isMouseNodeTranslationHotkey(config.translate.node.hotkey)) {
+        if (isActiveHotkeyRelease)
           resetHotkeySession()
         return
       }
 
-      const hotkeyEventKey = HOTKEY_EVENT_KEYS[config.translate.node.hotkey]
-
-      if (event.key === hotkeyEventKey || event.key === activeHotkeyEventKey) {
+      if (nodeTranslationHotkeyMatchesKeyboardEvent(config.translate.node.hotkey, event) || isActiveHotkeyRelease) {
         if (isHotkeyPressed && isHotkeySessionPure) {
           if (timerId) {
             clearTimeout(timerId)
@@ -301,7 +404,7 @@ export function registerNodeTranslationTriggerListeners({
           }
           if (!actionTriggered) {
             const currentConfig = await getCurrentConfig()
-            if (!currentConfig || !currentConfig.translate.node.enabled || currentConfig.translate.node.hotkey === "clickAndHold")
+            if (!currentConfig || !currentConfig.translate.node.enabled || isClickAndHoldNodeTranslationHotkey(currentConfig.translate.node.hotkey) || isMouseNodeTranslationHotkey(currentConfig.translate.node.hotkey))
               return
 
             triggerNodeTranslation(resolveTriggerPoint(), currentConfig)
@@ -320,5 +423,7 @@ export function registerNodeTranslationTriggerListeners({
       moveThrottleTimer = null
     }
     clearClickAndHoldTimer()
+    activeMouseSideButtonTranslation = null
+    clearActiveMouseSideButtonTranslationTimer()
   }
 }

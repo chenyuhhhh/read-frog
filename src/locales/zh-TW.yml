@@ -13,6 +13,37 @@ sidePanel:
   firefoxUserActionHint: 在 Firefox 中，請從瀏覽器側邊欄開啟陪讀蛙。
   firefoxUserActionHelpText: 查看 Firefox 側邊欄說明
   firefoxUserActionHelpUrl: https://support.mozilla.org/zh-TW/kb/use-sidebar-access-tools-and-vertical-tabs
+sideContent:
+  floatingButton:
+    enableImmersiveReading: 開啟沉浸式閱讀
+    disableImmersiveReading: 關閉沉浸式閱讀
+vocabularyNotebook:
+  title: 生詞本
+  description: 從詞典查詢中收藏的詞條會儲存在本機。
+  add: 加入生詞本
+  remove: 從生詞本移除
+  unavailable: 詞典結果尚未就緒
+  saved: 已加入生詞本
+  removed: 已從生詞本移除
+  updateFailed: 更新生詞本失敗
+  deleted: 已刪除詞條
+  searchPlaceholder: 搜尋詞條、釋義或上下文
+  loading: 正在載入生詞...
+  emptyTitle: 尚未收藏詞條
+  emptyDescription: 在劃詞工具列開啟詞典，點亮星星即可儲存詞條。
+  noSearchResults: 找不到符合的詞條
+  noSearchResultsDescription: 換個關鍵字試試。
+  term: 詞條
+  definition: 釋義
+  context: 上下文
+  contextTranslation: 上下文翻譯
+  selectionText: 劃詞文字
+  source: 來源
+  createdAt: 建立時間
+  updatedAt: 更新時間
+  actions: 操作
+  viewDetails: 查看「$1」詳情
+  delete: 刪除詞條
 popup:
   theme: 主題
   autoLang: 自動偵測
@@ -882,6 +913,9 @@ thinking:
   collapse: 收起思考
 shortcutKeySelector:
   placeholder: 請輸入快捷鍵
+nodeTranslationHotkeyRecorder:
+  record: 錄製快捷鍵
+  recording: 正在錄製
 subtitles:
   actions:
     downloadSource: 下載原始字幕
@@ -911,6 +945,8 @@ hotkey:
   shift: Shift
   backtick: 反引號
   clickAndHold: 點擊並按住
+  mouseButton4: 滑鼠後退側鍵
+  mouseButton5: 滑鼠前進側鍵
 translationHub:
   searchLanguages: 搜尋語言...
   noLanguagesFound: 未找到語言

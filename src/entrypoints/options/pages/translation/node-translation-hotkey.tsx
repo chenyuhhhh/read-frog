@@ -1,18 +1,10 @@
 import { i18n } from "#imports"
 import { deepmerge } from "deepmerge-ts"
 import { useAtom } from "jotai"
+import { NodeTranslationHotkeyControl } from "@/components/node-translation-hotkey-control"
 import { Field, FieldContent, FieldLabel } from "@/components/ui/base-ui/field"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/base-ui/select"
 import { Switch } from "@/components/ui/base-ui/switch"
 import { configFieldsAtomMap } from "@/utils/atoms/config"
-import { HOTKEY_ICONS, HOTKEYS } from "@/utils/constants/hotkeys"
 import { ConfigCard } from "../../components/config-card"
 
 export function NodeTranslationHotkey() {
@@ -43,36 +35,16 @@ export function NodeTranslationHotkey() {
             }}
           />
         </Field>
-        <Select
-          value={translateConfig.node.hotkey}
-          onValueChange={(value: typeof HOTKEYS[number] | null) => {
-            if (!value)
-              return
+        <NodeTranslationHotkeyControl
+          hotkey={translateConfig.node.hotkey}
+          onChange={(hotkey) => {
             void setTranslateConfig(
-              deepmerge(translateConfig, { node: { hotkey: value } }),
+              deepmerge(translateConfig, { node: { hotkey } }),
             )
           }}
           disabled={!translateConfig.node.enabled}
-        >
-          <SelectTrigger className={`w-full ${!translateConfig.node.enabled ? "opacity-50 pointer-events-none" : ""}`}>
-            <SelectValue render={<span />}>
-              {HOTKEY_ICONS[translateConfig.node.hotkey]}
-              {" "}
-              {i18n.t(`hotkey.${translateConfig.node.hotkey}`)}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {HOTKEYS.map(item => (
-                <SelectItem key={item} value={item}>
-                  {HOTKEY_ICONS[item]}
-                  {" "}
-                  {i18n.t(`hotkey.${item}`)}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+          className={!translateConfig.node.enabled ? "opacity-50" : undefined}
+        />
       </div>
     </ConfigCard>
   )

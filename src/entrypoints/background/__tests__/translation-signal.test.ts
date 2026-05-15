@@ -78,6 +78,11 @@ async function setupSubject() {
   translationMessage()
 }
 
+async function flushMessageErrorHandlers() {
+  await Promise.resolve()
+  await Promise.resolve()
+}
+
 describe("translationMessage", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -160,6 +165,34 @@ describe("translationMessage", () => {
       enabled: false,
       analyticsContext: undefined,
     }, 42)
+  })
+
+  it("ignores missing receivers when notifying optional tab content scripts", async () => {
+    await setupSubject()
+    sendMessageMock.mockRejectedValue(new Error("Could not establish connection. Receiving end does not exist."))
+
+    await getHandler("tryToSetEnablePageTranslationByTabId")({
+      data: { tabId: 42, enabled: false },
+    })
+    await flushMessageErrorHandlers()
+
+    expect(loggerWarnMock).not.toHaveBeenCalled()
+  })
+
+  it("logs unexpected optional tab message failures", async () => {
+    await setupSubject()
+    const error = new Error("Unexpected transport failure")
+    sendMessageMock.mockRejectedValueOnce(error)
+
+    await getHandler("tryToSetEnablePageTranslationByTabId")({
+      data: { tabId: 42, enabled: true },
+    })
+    await flushMessageErrorHandlers()
+
+    expect(loggerWarnMock).toHaveBeenCalledWith(
+      "Failed to ask page translation manager to toggle",
+      error,
+    )
   })
 
   it("injects current iframes when explicitly asked for a tab", async () => {

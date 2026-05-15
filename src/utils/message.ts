@@ -20,6 +20,7 @@ import type {
   TTSPlaybackStopRequest,
 } from "@/types/tts-playback"
 import type { EdgeTTSVoice } from "@/utils/server/edge-tts/types"
+import type { VocabularyEntryCandidate } from "@/utils/vocabulary-notebook"
 import { defineExtensionMessaging } from "@webext-core/messaging"
 
 interface ProtocolMap {
@@ -70,6 +71,10 @@ interface ProtocolMap {
   // cache management
   clearAllTranslationRelatedCache: () => Promise<void>
   clearAiSegmentationCache: () => Promise<void>
+  // vocabulary notebook
+  vocabularyEntryExists: (data: { key: string }) => Promise<boolean>
+  saveVocabularyEntry: (data: { candidate: VocabularyEntryCandidate }) => Promise<{ key: string }>
+  deleteVocabularyEntry: (data: { key: string }) => Promise<{ ok: true }>
   // edge tts
   edgeTtsSynthesize: (data: EdgeTTSSynthesizeRequest) => Promise<EdgeTTSSynthesizeWireResponse>
   edgeTtsListVoices: () => Promise<EdgeTTSVoice[]>

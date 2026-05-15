@@ -13,6 +13,37 @@ sidePanel:
   firefoxUserActionHint: Trong Firefox, hãy mở Read Frog từ thanh bên của trình duyệt.
   firefoxUserActionHelpText: Xem cách mở thanh bên Firefox
   firefoxUserActionHelpUrl: https://support.mozilla.org/vi/kb/use-sidebar-access-tools-and-vertical-tabs
+sideContent:
+  floatingButton:
+    enableImmersiveReading: Enable immersive reading
+    disableImmersiveReading: Disable immersive reading
+vocabularyNotebook:
+  title: Sổ từ vựng
+  description: Các từ lưu từ từ điển được lưu cục bộ trên thiết bị này.
+  add: Thêm vào sổ từ vựng
+  remove: Xóa khỏi sổ từ vựng
+  unavailable: Kết quả từ điển chưa sẵn sàng
+  saved: Đã thêm vào sổ từ vựng
+  removed: Đã xóa khỏi sổ từ vựng
+  updateFailed: Không thể cập nhật sổ từ vựng
+  deleted: Đã xóa từ
+  searchPlaceholder: Tìm từ, định nghĩa hoặc ngữ cảnh
+  loading: Đang tải từ vựng...
+  emptyTitle: Chưa có từ nào được lưu
+  emptyDescription: Mở Từ điển từ thanh chọn văn bản và bật ngôi sao để lưu từ.
+  noSearchResults: Không có từ phù hợp
+  noSearchResultsDescription: Hãy thử một từ khóa khác.
+  term: Từ
+  definition: Định nghĩa
+  context: Ngữ cảnh
+  contextTranslation: Bản dịch ngữ cảnh
+  selectionText: Văn bản đã chọn
+  source: Nguồn
+  createdAt: Đã tạo
+  updatedAt: Đã cập nhật
+  actions: Hành động
+  viewDetails: Xem chi tiết "$1"
+  delete: Xóa từ
 popup:
   theme: Chủ đề
   autoLang: Tự động
@@ -882,6 +913,9 @@ thinking:
   collapse: Thu gọn suy luận
 shortcutKeySelector:
   placeholder: Vui lòng nhập phím tắt
+nodeTranslationHotkeyRecorder:
+  record: Record shortcut
+  recording: Recording shortcut
 subtitles:
   actions:
     downloadSource: Tải phụ đề gốc
@@ -911,6 +945,8 @@ hotkey:
   shift: Shift
   backtick: Dấu huyền
   clickAndHold: Nhấn và giữ
+  mouseButton4: Mouse Back Button
+  mouseButton5: Mouse Forward Button
 translationHub:
   searchLanguages: Tìm kiếm ngôn ngữ...
   noLanguagesFound: Không tìm thấy ngôn ngữ

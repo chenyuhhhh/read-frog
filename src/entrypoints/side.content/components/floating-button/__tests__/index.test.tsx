@@ -38,10 +38,23 @@ vi.mock("@/utils/atoms/config", () => {
       })
     },
   )
+  const immersiveReadingBaseAtom = atom({
+    enabledPatterns: [] as string[],
+  })
+  const immersiveReadingAtom = atom(
+    get => get(immersiveReadingBaseAtom),
+    (get, set, patch: { enabledPatterns?: string[] }) => {
+      set(immersiveReadingBaseAtom, {
+        ...get(immersiveReadingBaseAtom),
+        ...patch,
+      })
+    },
+  )
 
   return {
     configFieldsAtomMap: {
       floatingButton: floatingButtonAtom,
+      immersiveReading: immersiveReadingAtom,
       sideContent: atom({ width: 360 }),
     },
   }
@@ -118,6 +131,10 @@ function getMainButton() {
 
 function getFloatingButtonConfig(store: ReturnType<typeof createStore>) {
   return store.get(configFieldsAtomMap.floatingButton)
+}
+
+function getImmersiveReadingConfig(store: ReturnType<typeof createStore>) {
+  return store.get(configFieldsAtomMap.immersiveReading)
 }
 
 function mockRect(element: Element, rect: Partial<DOMRect>) {
@@ -289,7 +306,7 @@ describe("floatingButton controls", () => {
     renderFloatingButton()
 
     const mainButton = getMainButton()
-    expect(screen.getAllByRole("button")).toHaveLength(4)
+    expect(screen.getAllByRole("button")).toHaveLength(6)
 
     fireEvent.pointerDown(mainButton, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 900, clientY: 500 })
     act(() => {
@@ -301,6 +318,41 @@ describe("floatingButton controls", () => {
 
     fireEvent.pointerUp(mainButton, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 900, clientY: 500 })
     expect(sendMessage).not.toHaveBeenCalled()
+  })
+
+  it("toggles immersive reading for the current site", () => {
+    const { store } = renderFloatingButton()
+
+    const mainButton = getMainButton()
+    fireEvent.mouseEnter(mainButton)
+
+    const immersiveButton = screen.getByRole("button", {
+      name: "sideContent.floatingButton.enableImmersiveReading",
+    })
+    fireEvent.click(immersiveButton)
+
+    const currentPattern = window.location.hostname || window.location.href
+
+    expect(getImmersiveReadingConfig(store).enabledPatterns).toContain(currentPattern)
+
+    const disableButton = screen.getByRole("button", {
+      name: "sideContent.floatingButton.disableImmersiveReading",
+    })
+    fireEvent.click(disableButton)
+
+    expect(getImmersiveReadingConfig(store).enabledPatterns).not.toContain(currentPattern)
+  })
+
+  it("opens the vocabulary notebook from the floating controls", () => {
+    renderFloatingButton()
+
+    const mainButton = getMainButton()
+    fireEvent.mouseEnter(mainButton)
+    fireEvent.click(screen.getByRole("button", { name: "vocabularyNotebook.title" }))
+
+    expect(sendMessage).toHaveBeenCalledWith("openPage", {
+      url: expect.stringMatching(/^chrome-extension:\/\/[^/]+\/options\.html#\/vocabulary-notebook$/),
+    })
   })
 
   it("starts dragging before the long-press delay after enough pointer movement", () => {

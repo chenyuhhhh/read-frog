@@ -59,6 +59,10 @@ const contextMenuSchema = z.object({
   enabled: z.boolean(),
 })
 
+const immersiveReadingSchema = z.object({
+  enabledPatterns: z.array(z.string()),
+})
+
 // input translation language selector: 'sourceCode', 'targetCode', or fixed language code
 const inputTranslationLangSchema = z.union([
   z.literal("sourceCode"),
@@ -98,6 +102,7 @@ export const configSchema = z.object({
   sideContent: sideContentSchema,
   betaExperience: betaExperienceSchema,
   contextMenu: contextMenuSchema,
+  immersiveReading: immersiveReadingSchema,
   inputTranslation: inputTranslationSchema,
   videoSubtitles: videoSubtitlesSchema,
   siteControl: siteControlSchema,

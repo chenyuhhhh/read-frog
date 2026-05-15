@@ -75,11 +75,51 @@ describe("getOrCreateWebPageContext", () => {
     const result = await getOrCreateWebPageContext()
 
     expect(result?.webContent).toBe("# Readable page body")
-    expect(mockDefuddleConstructor).toHaveBeenCalledWith(document, {
+    expect(mockDefuddleConstructor).toHaveBeenCalledWith(expect.any(Document), {
       separateMarkdown: true,
       url: window.location.href,
       useAsync: false,
     })
+    expect(mockDefuddleConstructor.mock.calls[0]?.[0]).not.toBe(document)
+  })
+
+  it("normalizes relative metadata URLs before Defuddle parsing", async () => {
+    document.head.innerHTML = `
+      <base href="/tutorials/">
+      <link rel="canonical" href="./beginner/basics/intro.html">
+      <meta property="og:url" content="/tutorials/beginner/basics/intro.html#">
+      <meta name="twitter:url" content="beginner/basics/data_tutorial.html">
+    `
+    window.history.replaceState({}, "", "/tutorials/beginner/basics/intro.html#")
+    const { getOrCreateWebPageContext } = await loadModule()
+
+    await getOrCreateWebPageContext()
+
+    const snapshotDoc = mockDefuddleConstructor.mock.calls[0]?.[0] as Document
+    const metadataBaseUrl = new URL("/tutorials/", window.location.href).href
+    expect(snapshotDoc.querySelector("base")?.getAttribute("href")).toBe(
+      metadataBaseUrl,
+    )
+    expect(snapshotDoc.querySelector("link[rel~=\"canonical\"]")?.getAttribute("href")).toBe(
+      new URL("./beginner/basics/intro.html", metadataBaseUrl).href,
+    )
+    expect(snapshotDoc.querySelector("meta[property=\"og:url\"]")?.getAttribute("content")).toBe(
+      new URL("/tutorials/beginner/basics/intro.html#", metadataBaseUrl).href,
+    )
+    expect(snapshotDoc.querySelector("meta[name=\"twitter:url\"]")?.getAttribute("content")).toBe(
+      new URL("beginner/basics/data_tutorial.html", metadataBaseUrl).href,
+    )
+  })
+
+  it("adds an absolute page URL when metadata has no usable URL", async () => {
+    document.head.innerHTML = "<script type=\"application/ld+json\">{\"url\":\"/relative-schema-url\"}</script>"
+    window.history.replaceState({}, "", "/tutorials/beginner/basics/intro.html#")
+    const { getOrCreateWebPageContext } = await loadModule()
+
+    await getOrCreateWebPageContext()
+
+    const snapshotDoc = mockDefuddleConstructor.mock.calls[0]?.[0] as Document
+    expect(snapshotDoc.querySelector("meta[property=\"og:url\"]")?.getAttribute("content")).toBe(window.location.href)
   })
 
   it("converts Defuddle HTML content when a separate markdown field is missing", async () => {

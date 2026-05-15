@@ -13,6 +13,37 @@ sidePanel:
   firefoxUserActionHint: Firefox'ta Read Frog'u tarayıcının kenar çubuğundan açın.
   firefoxUserActionHelpText: Firefox kenar çubuğunu açmayı öğrenin
   firefoxUserActionHelpUrl: https://support.mozilla.org/tr/kb/use-sidebar-access-tools-and-vertical-tabs
+sideContent:
+  floatingButton:
+    enableImmersiveReading: Enable immersive reading
+    disableImmersiveReading: Disable immersive reading
+vocabularyNotebook:
+  title: Kelime Defteri
+  description: Sözlükten kaydedilen kelimeler bu cihazda yerel olarak saklanır.
+  add: Kelime defterine ekle
+  remove: Kelime defterinden kaldır
+  unavailable: Sözlük sonucu henüz hazır değil
+  saved: Kelime defterine eklendi
+  removed: Kelime defterinden kaldırıldı
+  updateFailed: Kelime defteri güncellenemedi
+  deleted: Kelime silindi
+  searchPlaceholder: Kelime, tanım veya bağlam ara
+  loading: Kelimeler yükleniyor...
+  emptyTitle: Henüz kayıtlı kelime yok
+  emptyDescription: Seçim araç çubuğundan Sözlüğü açın ve kelimeyi kaydetmek için yıldızı açın.
+  noSearchResults: Eşleşen kelime yok
+  noSearchResultsDescription: Farklı bir arama terimi deneyin.
+  term: Kelime
+  definition: Tanım
+  context: Bağlam
+  contextTranslation: Bağlam çevirisi
+  selectionText: Seçili metin
+  source: Kaynak
+  createdAt: Oluşturuldu
+  updatedAt: Güncellendi
+  actions: İşlemler
+  viewDetails: "\"$1\" ayrıntılarını görüntüle"
+  delete: Kelimeyi sil
 popup:
   theme: Tema
   autoLang: Otomatik
@@ -882,6 +913,9 @@ thinking:
   collapse: Düşünmeyi daralt
 shortcutKeySelector:
   placeholder: Lütfen kısayolu girin
+nodeTranslationHotkeyRecorder:
+  record: Record shortcut
+  recording: Recording shortcut
 subtitles:
   actions:
     downloadSource: Kaynak altyazıları indir
@@ -911,6 +945,8 @@ hotkey:
   shift: Shift
   backtick: Ters tırnak
   clickAndHold: Tıkla ve basılı tut
+  mouseButton4: Mouse Back Button
+  mouseButton5: Mouse Forward Button
 translationHub:
   searchLanguages: Dil ara...
   noLanguagesFound: Dil bulunamadı

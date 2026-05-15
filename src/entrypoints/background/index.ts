@@ -23,6 +23,7 @@ import { setUpSubtitlesTranslationQueue, setUpWebPageTranslationQueue } from "./
 import { translationMessage } from "./translation-signal"
 import { setupTTSPlaybackMessageHandlers } from "./tts-playback"
 import { setupUninstallSurvey } from "./uninstall-survey"
+import { setupVocabularyNotebookMessageHandlers } from "./vocabulary-notebook"
 
 export default defineBackground({
   type: "module",
@@ -107,6 +108,7 @@ export default defineBackground({
     setupEdgeTTSMessageHandlers()
     setupLLMGenerateTextMessageHandlers()
     setupTTSPlaybackMessageHandlers()
+    setupVocabularyNotebookMessageHandlers()
     void initMockData()
 
     // Setup on-demand iframe injection after page translation is enabled.

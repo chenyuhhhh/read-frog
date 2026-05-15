@@ -19,6 +19,7 @@ import { clearEffectiveSiteControlUrl, getEffectiveSiteControlUrl, isSiteEnabled
 import { addStyleToShadow } from "@/utils/styles"
 import { queryClient } from "@/utils/tanstack-query"
 import { getLocalThemeMode } from "@/utils/theme"
+import { isWebExtensionRuntimeAvailable } from "@/utils/web-extension-environment"
 import App from "./app"
 import "@/assets/styles/theme.css"
 
@@ -86,6 +87,9 @@ export default defineContentScript({
   matches: ["*://*/*", "file:///*"],
   cssInjectionMode: "ui",
   async main(ctx) {
+    if (!isWebExtensionRuntimeAvailable())
+      return
+
     // Prevent double injection (manifest-based + programmatic injection)
     if (window.__READ_FROG_SELECTION_INJECTED__)
       return
