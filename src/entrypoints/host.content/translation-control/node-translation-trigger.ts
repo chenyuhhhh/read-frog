@@ -134,19 +134,6 @@ export function registerNodeTranslationTriggerListeners({
     event.stopImmediatePropagation()
   }
 
-  const shouldTriggerMouseSideButtonTranslation = (
-    event: MouseEvent | PointerEvent,
-    config: Config,
-    mouseHotkey: string,
-    immersiveReadingEnabled: boolean,
-  ): boolean => {
-    return immersiveReadingEnabled
-      && MOUSE_SIDE_BUTTON_TRIGGER_EVENTS.has(event.type)
-      && config.translate.node.enabled
-      && nodeTranslationHotkeyMatchesMouseEvent(config.translate.node.hotkey, event)
-      && activeMouseSideButtonTranslation !== mouseHotkey
-  }
-
   const resolveMouseSideButtonTriggerPoint = (event: MouseEvent | PointerEvent): Point => {
     const hoveredElement = getDeepestHoveredElement()
     const hoveredPoint = hoveredElement ? getElementCenterPoint(hoveredElement) : null
@@ -171,12 +158,13 @@ export function registerNodeTranslationTriggerListeners({
     if (!config)
       return
 
-    const isConfiguredMouseHotkey = config.translate.node.enabled
-      && nodeTranslationHotkeyMatchesMouseEvent(config.translate.node.hotkey, event)
     const immersiveReadingEnabled = isImmersiveReadingEnabled(config)
     const shouldBlockNavigation = immersiveReadingEnabled
-    const shouldTriggerTranslation = isConfiguredMouseHotkey
-      && shouldTriggerMouseSideButtonTranslation(event, config, mouseHotkey, immersiveReadingEnabled)
+    const shouldTriggerTranslation = immersiveReadingEnabled
+      && MOUSE_SIDE_BUTTON_TRIGGER_EVENTS.has(event.type)
+      && config.translate.node.enabled
+      && nodeTranslationHotkeyMatchesMouseEvent(config.translate.node.hotkey, event)
+      && activeMouseSideButtonTranslation !== mouseHotkey
 
     if (shouldBlockNavigation)
       blockMouseSideButtonNavigation(event)

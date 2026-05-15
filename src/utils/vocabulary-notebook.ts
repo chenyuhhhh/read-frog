@@ -1,6 +1,8 @@
 import type { SelectionToolbarCustomAction, SelectionToolbarCustomActionOutputField } from "@/types/config/selection-toolbar"
 import type VocabularyEntry from "@/utils/db/dexie/tables/vocabulary-entry"
 import { browser } from "#imports"
+import { liveQuery } from "dexie"
+import { db } from "@/utils/db/dexie/db"
 import { logger } from "@/utils/logger"
 
 export interface VocabularyEntryCandidate {
@@ -37,6 +39,8 @@ type StoredVocabularyEntry = VocabularyEntryCandidate & {
   createdAt: string
   updatedAt: string
 }
+
+let legacyMigrationPromise: Promise<void> | null = null
 
 export function getVocabularyEntryQueryKey(key: string) {
   return ["vocabulary-entry", key] as const
@@ -93,19 +97,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value)
 }
 
-function toStoredEntry(entry: VocabularyEntry): StoredVocabularyEntry {
+function toVocabularyEntry(entry: StoredVocabularyEntry | VocabularyEntry): VocabularyEntry {
+  const fallbackDate = new Date()
   return {
     ...entry,
-    createdAt: entry.createdAt.toISOString(),
-    updatedAt: entry.updatedAt.toISOString(),
-  }
-}
-
-function toVocabularyEntry(entry: StoredVocabularyEntry): VocabularyEntry {
-  return {
-    ...entry,
-    createdAt: new Date(entry.createdAt),
-    updatedAt: new Date(entry.updatedAt),
+    createdAt: toDate(entry.createdAt, fallbackDate),
+    updatedAt: toDate(entry.updatedAt, fallbackDate),
   } as VocabularyEntry
 }
 
@@ -113,7 +110,15 @@ function sortVocabularyEntries(entries: VocabularyEntry[]): VocabularyEntry[] {
   return [...entries].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 }
 
-async function getStoredVocabularyEntries(): Promise<Record<string, StoredVocabularyEntry>> {
+function toDate(value: Date | string | undefined, fallback: Date): Date {
+  const date = value instanceof Date
+    ? value
+    : value ? new Date(value) : fallback
+
+  return Number.isNaN(date.getTime()) ? fallback : date
+}
+
+async function getLegacyStoredVocabularyEntries(): Promise<Record<string, StoredVocabularyEntry>> {
   const result = await browser.storage.local.get(VOCABULARY_ENTRIES_STORAGE_KEY)
   const entries = result[VOCABULARY_ENTRIES_STORAGE_KEY]
 
@@ -122,10 +127,41 @@ async function getStoredVocabularyEntries(): Promise<Record<string, StoredVocabu
     : {}
 }
 
-async function setStoredVocabularyEntries(entries: Record<string, StoredVocabularyEntry>): Promise<void> {
-  await browser.storage.local.set({
-    [VOCABULARY_ENTRIES_STORAGE_KEY]: entries,
+async function removeLegacyStoredVocabularyEntries(): Promise<void> {
+  await browser.storage.local.remove(VOCABULARY_ENTRIES_STORAGE_KEY)
+}
+
+async function migrateLegacyVocabularyEntriesToDexie(): Promise<void> {
+  const legacyEntries = Object.values(await getLegacyStoredVocabularyEntries()).map(toVocabularyEntry)
+  if (legacyEntries.length === 0) {
+    await removeLegacyStoredVocabularyEntries()
+    return
+  }
+
+  await db.transaction("rw", db.vocabularyEntries, async () => {
+    for (const legacyEntry of legacyEntries) {
+      const existingEntry = await db.vocabularyEntries.get(legacyEntry.key)
+      if (existingEntry && existingEntry.updatedAt.getTime() > legacyEntry.updatedAt.getTime()) {
+        continue
+      }
+
+      await db.vocabularyEntries.put(legacyEntry)
+    }
   })
+  await removeLegacyStoredVocabularyEntries()
+}
+
+async function ensureLegacyVocabularyEntriesMigrated(): Promise<void> {
+  legacyMigrationPromise ??= migrateLegacyVocabularyEntriesToDexie()
+    .catch((error) => {
+      legacyMigrationPromise = null
+      throw error
+    })
+  await legacyMigrationPromise
+}
+
+async function listVocabularyEntriesFromDexie(): Promise<VocabularyEntry[]> {
+  return sortVocabularyEntries((await db.vocabularyEntries.toArray()).map(toVocabularyEntry))
 }
 
 export function normalizeVocabularyTerm(term: string): string {
@@ -212,69 +248,48 @@ export function buildVocabularyEntryCandidate({
 }
 
 export async function findVocabularyEntry(key: string): Promise<VocabularyEntry | undefined> {
-  const entries = await getStoredVocabularyEntries()
-  const entry = entries[key]
+  await ensureLegacyVocabularyEntriesMigrated()
+  const entry = await db.vocabularyEntries.get(key)
   return entry ? toVocabularyEntry(entry) : undefined
 }
 
 export async function upsertVocabularyEntry(candidate: VocabularyEntryCandidate): Promise<VocabularyEntry> {
-  const entries = await getStoredVocabularyEntries()
-  const existing = entries[candidate.key]
-  const now = new Date()
-  const entry = {
-    ...candidate,
-    createdAt: existing ? new Date(existing.createdAt) : now,
-    updatedAt: now,
-  } as VocabularyEntry
+  await ensureLegacyVocabularyEntriesMigrated()
+  return await db.transaction("rw", db.vocabularyEntries, async () => {
+    const existing = await db.vocabularyEntries.get(candidate.key)
+    const now = new Date()
+    const entry = {
+      ...candidate,
+      createdAt: existing ? toDate(existing.createdAt, now) : now,
+      updatedAt: now,
+    } as VocabularyEntry
 
-  await setStoredVocabularyEntries({
-    ...entries,
-    [entry.key]: toStoredEntry(entry),
+    await db.vocabularyEntries.put(entry)
+    return entry
   })
-  return entry
 }
 
 export async function removeVocabularyEntry(key: string): Promise<void> {
-  const entries = await getStoredVocabularyEntries()
-  delete entries[key]
-  await setStoredVocabularyEntries(entries)
+  await ensureLegacyVocabularyEntriesMigrated()
+  await db.vocabularyEntries.delete(key)
 }
 
 export async function listVocabularyEntries(): Promise<VocabularyEntry[]> {
-  const entries = await getStoredVocabularyEntries()
-  return sortVocabularyEntries(Object.values(entries).map(toVocabularyEntry))
+  await ensureLegacyVocabularyEntriesMigrated()
+  return await listVocabularyEntriesFromDexie()
 }
 
 export async function observeVocabularyEntries(
   onEntries: (entries: VocabularyEntry[]) => void,
 ): Promise<{ unsubscribe: () => void }> {
-  const listener = (
-    changes: Record<string, { newValue?: unknown, oldValue?: unknown }>,
-    areaName: string,
-  ) => {
-    if (areaName !== "local") {
-      return
-    }
-
-    const change = changes[VOCABULARY_ENTRIES_STORAGE_KEY]
-    if (!change) {
-      return
-    }
-
-    try {
-      const entries = isRecord(change.newValue)
-        ? Object.values(change.newValue as Record<string, StoredVocabularyEntry>).map(toVocabularyEntry)
-        : []
-      onEntries(sortVocabularyEntries(entries))
-    }
-    catch (error) {
-      logger.error("[VocabularyNotebook] Failed to observe entries:", error)
-    }
-  }
-
-  browser.storage.onChanged.addListener(listener)
+  await ensureLegacyVocabularyEntriesMigrated()
+  const subscription = liveQuery(listVocabularyEntriesFromDexie)
+    .subscribe({
+      next: onEntries,
+      error: error => logger.error("[VocabularyNotebook] Failed to observe entries:", error),
+    })
 
   return {
-    unsubscribe: () => browser.storage.onChanged.removeListener(listener),
+    unsubscribe: () => subscription.unsubscribe(),
   }
 }

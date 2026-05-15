@@ -13,10 +13,10 @@ import { registerNodeTranslationTriggerListeners } from "./node-translation-trig
  * Config is read on demand when the interaction fires so long-lived content
  * scripts don't drift if the page was frozen and missed storage events.
  */
-export function registerNodeTranslationTriggers(): () => void {
+export function registerNodeTranslationTriggers(initialConfig: Config | null = null): () => void {
   const ac = new AbortController()
   const { signal } = ac
-  let cachedConfig: Config | null = null
+  let cachedConfig: Config | null = initialConfig ?? DEFAULT_CONFIG
 
   const getCurrentConfig = async (): Promise<Config | null> => {
     const config = await getLocalConfig()

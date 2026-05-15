@@ -108,7 +108,7 @@ export function NodeTranslationHotkeyControl({
   return (
     <div className={cn("flex w-full items-center gap-2", className)}>
       <Select
-        value={isPresetHotkey ? hotkey : hotkey}
+        value={hotkey}
         disabled={disabled || isRecording}
         onValueChange={(value: string | null) => {
           if (!value) {
