@@ -497,6 +497,11 @@ options:
       description: 總是翻譯這個網站
       urlPattern: URL 模式
       enterUrlPattern: 輸入 URL 模式
+    neverAutoTranslateWebsite:
+      title: 依網站永不自動翻譯
+      description: 永不自動翻譯這個網站
+      urlPattern: URL 模式
+      enterUrlPattern: 輸入 URL 模式
     personalizedPrompts:
       title: 個人化 Prompt
       description: 自訂不同類型的 Prompt，可以在翻譯時自行調整 Prompt 類型。Prompt 表示以用戶身份發送給 LLM 的文字。

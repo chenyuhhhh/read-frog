@@ -103,6 +103,7 @@ export const translateConfigSchema = z.object({
   page: z.object({
     range: pageTranslateRangeSchema,
     autoTranslatePatterns: z.array(z.string()),
+    neverAutoTranslatePatterns: z.array(z.string()),
     autoTranslateLanguages: z.array(langCodeISO6393Schema),
     shortcut: pageTranslationShortcutSchema,
     preload: preloadConfigSchema,

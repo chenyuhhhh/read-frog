@@ -18,7 +18,7 @@ export const GOOGLE_DRIVE_TOKEN_STORAGE_KEY = "__googleDriveToken"
 
 export const THEME_STORAGE_KEY = "theme"
 export const DEFAULT_DETECTED_CODE = "eng" as const
-export const CONFIG_SCHEMA_VERSION = 73
+export const CONFIG_SCHEMA_VERSION = 74
 
 export const DEFAULT_FLOATING_BUTTON_POSITION = 0.66
 export const DEFAULT_FLOATING_BUTTON_SIDE: FloatingButtonSide = "right"
@@ -61,6 +61,7 @@ export const DEFAULT_CONFIG: Config = {
       // TODO: change this to "all" for users once our translation algorithm can handle most cases elegantly
       range: import.meta.env.DEV ? "all" : "main",
       autoTranslatePatterns: ["news.ycombinator.com"],
+      neverAutoTranslatePatterns: [],
       autoTranslateLanguages: [],
       shortcut: DEFAULT_AUTO_TRANSLATE_SHORTCUT_KEY,
       preload: {
