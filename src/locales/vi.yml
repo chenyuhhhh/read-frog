@@ -529,6 +529,7 @@ options:
           input: Nội dung văn bản để dịch
           targetLanguage: Ngôn ngữ đích
           webTitle: Tiêu đề trang web
+          webDescription: Mô tả trang web từ siêu dữ liệu trang
           webContent: Nội dung trang web (bị cắt còn 2000 ký tự đầu)
           webSummary: Tóm tắt trang web (yêu cầu Ngữ cảnh thông minh AI)
         save: Lưu thay đổi
@@ -856,7 +857,8 @@ options:
         promptCellInput:
           input: Văn bản phụ đề cần dịch
           targetLanguage: Ngôn ngữ đích
-          videoTitle: Tiêu đề video
+          webTitle: Tiêu đề trang web
+          webDescription: Mô tả trang web từ siêu dữ liệu trang
           videoSummary: Tóm tắt video (yêu cầu Ngữ cảnh thông minh AI)
   whatsNew:
     title: Có gì mới

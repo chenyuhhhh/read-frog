@@ -46,6 +46,7 @@ describe("getOrCreateWebPageContext", () => {
     })
     mockCreateMarkdownContent.mockReturnValue("# Converted readable page body")
 
+    document.head.innerHTML = ""
     document.title = "Original Title"
     document.body.innerHTML = "<main>Page body</main>"
     window.history.replaceState({}, "", "/article")
@@ -64,6 +65,7 @@ describe("getOrCreateWebPageContext", () => {
     expect(second).toEqual({
       url: first?.url,
       webTitle: "Original Title",
+      webDescription: "",
       webContent: first?.webContent,
     })
     expect(mockDefuddleConstructor).toHaveBeenCalledTimes(1)
@@ -120,6 +122,15 @@ describe("getOrCreateWebPageContext", () => {
 
     const snapshotDoc = mockDefuddleConstructor.mock.calls[0]?.[0] as Document
     expect(snapshotDoc.querySelector("meta[property=\"og:url\"]")?.getAttribute("content")).toBe(window.location.href)
+  })
+
+  it("reads webpage description from meta tags", async () => {
+    document.head.innerHTML = `<meta name="description" content="  Article   description  ">`
+    const { getOrCreateWebPageContext } = await loadModule()
+
+    const result = await getOrCreateWebPageContext()
+
+    expect(result?.webDescription).toBe("Article description")
   })
 
   it("converts Defuddle HTML content when a separate markdown field is missing", async () => {
