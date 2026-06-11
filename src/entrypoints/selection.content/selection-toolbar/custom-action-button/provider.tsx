@@ -25,6 +25,8 @@ import { createSelectionToolbarPrecheckError } from "../inline-error"
 import { useSelectionContextMenuRequestResolver } from "../use-selection-context-menu-request"
 import { CustomActionContent } from "./custom-action-content"
 import { SaveToNotebaseButton } from "./save-to-notebase-button"
+import { isSaveToNotebaseDialogOpenAtom } from "./save-to-notebase-dialog-atom"
+import { SaveToNotebaseDialogHost } from "./save-to-notebase-dialog-host"
 import {
   buildCustomActionExecutionPlan,
   useCustomActionExecution,
@@ -80,6 +82,7 @@ export function SelectionCustomActionProvider({
   const language = useAtomValue(configFieldsAtomMap.language)
   const setIsSelectionToolbarVisible = useSetAtom(isSelectionToolbarVisibleAtom)
   const setConfig = useSetAtom(writeConfigAtom)
+  const isSaveToNotebaseDialogOpen = useAtomValue(isSaveToNotebaseDialogOpenAtom)
   const bodyRef = useRef<HTMLDivElement>(null)
   const pendingOpenRequestRef = useRef<SelectionCustomActionPendingOpenRequest | null>(null)
   const reopenFrameRef = useRef<number | null>(null)
@@ -362,6 +365,7 @@ export function SelectionCustomActionProvider({
         onOpenChange={handleOpenChange}
         anchor={anchor}
         onAnchorChange={setAnchor}
+        disablePointerDismissal={isSaveToNotebaseDialogOpen}
       >
         <SelectionPopover.Content key={popoverSessionKey} container={shadowWrapper ?? document.body}>
           <SelectionPopover.Header className="border-b">
@@ -412,6 +416,7 @@ export function SelectionCustomActionProvider({
           </SelectionToolbarFooterContent>
         </SelectionPopover.Content>
       </SelectionPopover.Root>
+      <SaveToNotebaseDialogHost />
     </SelectionCustomActionContext>
   )
 }
