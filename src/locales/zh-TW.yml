@@ -922,6 +922,7 @@ action:
   copied: 已複製
   regenerate: 重新生成
   viewContextDetails: 上下文
+  customizeCustomAction: 定製「$1」動作
   saveToNotebase: 儲存到筆記庫
   saveToNotebaseSaving: 儲存中...
   saveToNotebaseSuccess: 已儲存到筆記庫
