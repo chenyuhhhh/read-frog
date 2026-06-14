@@ -58,7 +58,7 @@ Chrome 扩展加载目录：
 Chrome zip 包：
 
 ```text
-.output/read-frogextension-1.33.6-chrome.zip
+.output/read-frogextension-1.34.0-chrome.zip
 ```
 
 ## 近期提交

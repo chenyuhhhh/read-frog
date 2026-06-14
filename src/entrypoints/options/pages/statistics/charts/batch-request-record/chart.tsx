@@ -42,7 +42,7 @@ export default function Chart() {
     <Card className="relative min-w-[400px] flex-1 overflow-hidden border-border/70 shadow-xs">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-linear-to-b from-primary/10 via-primary/4 to-transparent" />
       <CardContent className="relative h-80 pt-4">
-        <ChartContainer config={chartConfig} className="h-full w-full">
+        <ChartContainer config={chartConfig} useAspectRatio={false} className="h-full w-full">
           <AreaChart
             accessibilityLayer
             data={requestRecordPoints}
