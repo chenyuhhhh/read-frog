@@ -12,6 +12,7 @@ import { cn } from "@/utils/styles/utils"
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
 const CHART_ID_SANITIZER_REGEX = /:/g
+const CHART_INITIAL_DIMENSION = { width: 1, height: 1 } as const
 export type ChartConfig = {
   [k in string]: {
     label?: React.ReactNode
@@ -61,7 +62,7 @@ function ChartContainer({
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
+        <RechartsPrimitive.ResponsiveContainer initialDimension={CHART_INITIAL_DIMENSION}>
           {children}
         </RechartsPrimitive.ResponsiveContainer>
       </div>

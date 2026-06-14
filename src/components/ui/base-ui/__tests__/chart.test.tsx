@@ -4,8 +4,20 @@ import { describe, expect, it, vi } from "vitest"
 import { ChartContainer } from "../chart"
 
 vi.mock("recharts", () => ({
-  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="responsive-container">{children}</div>
+  ResponsiveContainer: ({
+    children,
+    initialDimension,
+  }: {
+    children: React.ReactNode
+    initialDimension?: { width: number, height: number }
+  }) => (
+    <div
+      data-initial-height={initialDimension?.height}
+      data-initial-width={initialDimension?.width}
+      data-testid="responsive-container"
+    >
+      {children}
+    </div>
   ),
   Tooltip: () => null,
   Legend: () => null,
@@ -37,5 +49,16 @@ describe("chart container", () => {
     )
 
     expect(container.firstElementChild).not.toHaveClass("aspect-video")
+  })
+
+  it("starts recharts with a positive initial dimension", () => {
+    const { getByTestId } = render(
+      <ChartContainer config={config}>
+        <div>Chart</div>
+      </ChartContainer>,
+    )
+
+    expect(getByTestId("responsive-container")).toHaveAttribute("data-initial-height", "1")
+    expect(getByTestId("responsive-container")).toHaveAttribute("data-initial-width", "1")
   })
 })
