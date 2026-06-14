@@ -1,10 +1,10 @@
 import type { SelectionToolbarCustomActionNotebaseAccount } from "@/types/config/selection-toolbar"
 import type { PendingCreateNotebaseSave, PendingNotebaseSave } from "@/utils/notebase/pending-save"
+import { i18n } from "#imports"
 import { useMutation } from "@tanstack/react-query"
 import { useAtom } from "jotai"
 import { useState } from "react"
 import { toast } from "sonner"
-import { i18n } from "#imports"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/base-ui/avatar"
 import { Button } from "@/components/ui/base-ui/button"
 import {
@@ -32,8 +32,10 @@ import {
   isORPCValidationError,
 } from "@/utils/notebase/errors"
 import {
+  buildNotebaseColumnCreateInputsFromPending,
   buildNotebaseConnectionFromPending,
   buildNotebaseCreateInputFromPending,
+  buildNotebaseInitialRowCreateInputFromPending,
   getNotebaseDetailUrl,
   setPendingNotebaseSave,
 } from "@/utils/notebase/pending-save"
@@ -84,7 +86,13 @@ export function SaveToNotebaseDialogHost() {
       pendingNotebaseSave: PendingCreateNotebaseSave
       connectedAccount: SelectionToolbarCustomActionNotebaseAccount
     }) => {
-      await orpcClient.notebase.create(buildNotebaseCreateInputFromPending(pendingNotebaseSave))
+      await orpcClient.customTable.create(buildNotebaseCreateInputFromPending(pendingNotebaseSave))
+
+      for (const input of buildNotebaseColumnCreateInputsFromPending(pendingNotebaseSave)) {
+        await orpcClient.column.create(input)
+      }
+
+      await orpcClient.row.create(buildNotebaseInitialRowCreateInputFromPending(pendingNotebaseSave))
       return pendingNotebaseSave
     },
     onSuccess: async (pendingNotebaseSave, variables) => {

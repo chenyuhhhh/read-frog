@@ -1,11 +1,13 @@
-import type { NotebaseGetSchemaOutput } from "@read-frog/api-contract"
 import type { Config } from "@/types/config/config"
 import type { SelectionToolbarCustomAction } from "@/types/config/selection-toolbar"
+import type { NotebaseGetSchemaOutput } from "@/utils/notebase/api-types"
 import type { PendingCreateNotebaseSave, PendingNotebaseSave } from "@/utils/notebase/pending-save"
 import { describe, expect, it, vi } from "vitest"
 import { DEFAULT_CONFIG } from "@/utils/constants/config"
 import {
+  buildNotebaseColumnCreateInputsFromPending,
   buildNotebaseCreateInputFromPending,
+  buildNotebaseInitialRowCreateInputFromPending,
   createPendingConnectedNotebaseSave,
   createPendingNotebaseSave,
 } from "@/utils/notebase/pending-save"
@@ -85,6 +87,7 @@ function createDeps({
         : null,
     ),
     createNotebase: vi.fn().mockResolvedValue({ txid: 1 }),
+    createColumn: vi.fn().mockResolvedValue({ txid: 1 }),
     createRow: vi.fn().mockResolvedValue({ txid: 1 }),
     listNotebases: vi.fn().mockResolvedValue([{ id: "notebase-1", name: "Summarize Notes" }]),
     getSchema: vi.fn(),
@@ -104,9 +107,9 @@ function createMatchingSchema(pending: PendingCreateNotebaseSave): NotebaseGetSc
     id: pending.notebaseId,
     name: pending.actionName,
     updatedAt: new Date(),
-    notebaseColumns: pending.columns.map((column, index) => ({
+    columns: pending.columns.map((column, index) => ({
       id: column.notebaseColumnId,
-      notebaseId: pending.notebaseId,
+      tableId: pending.notebaseId,
       name: column.notebaseColumnName,
       config: column.localFieldType === "number"
         ? { type: "number", decimal: 0, format: "number" }
@@ -125,10 +128,10 @@ function createConnectedSchema(): NotebaseGetSchemaOutput {
     id: "notebase-1",
     name: "Summarize Notes",
     updatedAt: new Date(),
-    notebaseColumns: [
+    columns: [
       {
         id: "column-summary",
-        notebaseId: "notebase-1",
+        tableId: "notebase-1",
         name: "Summary",
         config: { type: "string" },
         position: 0,
@@ -186,6 +189,8 @@ describe("notebase pending save processor", () => {
     await createNotebasePendingSaveProcessor(loggedInDeps)("auth-cookie-change")
 
     expect(loggedInDeps.createNotebase).toHaveBeenCalledWith(buildNotebaseCreateInputFromPending(pending))
+    expect(loggedInDeps.createColumn).toHaveBeenCalledWith(buildNotebaseColumnCreateInputsFromPending(pending)[0])
+    expect(loggedInDeps.createRow).toHaveBeenCalledWith(buildNotebaseInitialRowCreateInputFromPending(pending))
     expect(loggedInDeps.setConfig).toHaveBeenCalledWith(expect.objectContaining({
       selectionToolbar: expect.objectContaining({
         customActions: [
@@ -238,7 +243,7 @@ describe("notebase pending save processor", () => {
     await createNotebasePendingSaveProcessor(deps)("auth-cookie-change")
 
     expect(deps.createRow).toHaveBeenCalledWith({
-      notebaseId: "notebase-1",
+      tableId: "notebase-1",
       data: {
         cells: {
           "column-summary": "A short summary",
@@ -273,8 +278,9 @@ describe("notebase pending save processor", () => {
 
     await createNotebasePendingSaveProcessor(deps)("auth-cookie-change")
 
-    expect(deps.createRow).not.toHaveBeenCalled()
     expect(deps.createNotebase).toHaveBeenCalledTimes(1)
+    expect(deps.createColumn).toHaveBeenCalledTimes(1)
+    expect(deps.createRow).toHaveBeenCalledTimes(1)
     expect(deps.setConfig).toHaveBeenCalledTimes(1)
 
     const nextConfig = deps.setConfig.mock.calls[0]?.[0] as Config

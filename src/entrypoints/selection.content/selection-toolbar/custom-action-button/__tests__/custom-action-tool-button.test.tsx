@@ -59,7 +59,7 @@ describe("customActionToolButton", () => {
     const button = screen.getByRole("button", { name: "Customize Summarize action" })
 
     expect(button).toHaveAttribute("title", "Customize Summarize action")
-    expect(button).toHaveClass("size-7")
+    expect(button).toHaveClass("size-8")
 
     fireEvent.click(button)
 

@@ -1,5 +1,5 @@
-import type { NotebaseCreateInput, NotebaseGetSchemaOutput } from "@read-frog/api-contract"
 import type { z } from "zod"
+import type { NotebaseColumnCreateInput, NotebaseCreateInput, NotebaseGetSchemaOutput, NotebaseRowCreateInput } from "./api-types"
 import type { Config } from "@/types/config/config"
 import type {
   SelectionToolbarCustomAction,
@@ -7,8 +7,8 @@ import type {
   SelectionToolbarCustomActionNotebaseConnection,
   SelectionToolbarCustomActionOutputField,
 } from "@/types/config/selection-toolbar"
-import { z as zod } from "zod"
 import { storage } from "#imports"
+import { z as zod } from "zod"
 import { env } from "@/env"
 import { selectionToolbarCustomActionNotebaseConnectionSchema } from "@/types/config/selection-toolbar"
 import { getRandomUUID } from "@/utils/crypto-polyfill"
@@ -135,18 +135,32 @@ export function buildNotebaseCreateInputFromPending(pending: PendingCreateNoteba
   return {
     id: pending.notebaseId,
     name: pending.actionName,
-    options: {
-      initialColumns: pending.columns.map(column => ({
-        id: column.notebaseColumnId,
-        name: column.notebaseColumnName,
-        config: column.localFieldType === "number"
-          ? { type: "number", decimal: 0, format: "number" }
-          : { type: "string" },
-      })),
-      initialRow: {
-        id: pending.rowId,
-        cells: pending.cells,
-      },
+  }
+}
+
+function buildPendingColumnConfig(column: PendingCreateNotebaseSave["columns"][number]) {
+  return column.localFieldType === "number"
+    ? { type: "number" as const, decimal: 0, format: "number" as const }
+    : { type: "string" as const }
+}
+
+export function buildNotebaseColumnCreateInputsFromPending(pending: PendingCreateNotebaseSave): NotebaseColumnCreateInput[] {
+  return pending.columns.map(column => ({
+    tableId: pending.notebaseId,
+    data: {
+      id: column.notebaseColumnId,
+      name: column.notebaseColumnName,
+      config: buildPendingColumnConfig(column),
+    },
+  }))
+}
+
+export function buildNotebaseInitialRowCreateInputFromPending(pending: PendingCreateNotebaseSave): NotebaseRowCreateInput {
+  return {
+    tableId: pending.notebaseId,
+    data: {
+      id: pending.rowId,
+      cells: pending.cells,
     },
   }
 }
@@ -336,12 +350,12 @@ export function doesSchemaMatchPendingColumns(
   schema: NotebaseGetSchemaOutput,
   pending: PendingCreateNotebaseSave,
 ) {
-  if (schema.notebaseColumns.length !== pending.columns.length) {
+  if (schema.columns.length !== pending.columns.length) {
     return false
   }
 
   return pending.columns.every((pendingColumn, index) => {
-    const column = schema.notebaseColumns[index]
+    const column = schema.columns[index]
     if (!column) {
       return false
     }

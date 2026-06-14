@@ -1,5 +1,5 @@
-import type { NotebaseRowCreateInput } from "@read-frog/api-contract"
 import type { SelectionToolbarCustomAction } from "@/types/config/selection-toolbar"
+import type { NotebaseRowCreateInput } from "@/utils/notebase/api-types"
 import { describe, expect, it } from "vitest"
 import {
   sanitizeSelectionToolbarCustomAction,
@@ -86,10 +86,10 @@ describe("notebase utils", () => {
       id: "table-1",
       name: "Articles",
       updatedAt: new Date(),
-      notebaseColumns: [
+      columns: [
         {
           id: "column-summary",
-          notebaseId: "notebase-1",
+          tableId: "notebase-1",
           name: "Summary",
           config: { type: "string" },
           position: 0,
@@ -100,7 +100,7 @@ describe("notebase utils", () => {
         },
         {
           id: "column-date",
-          notebaseId: "notebase-1",
+          tableId: "notebase-1",
           name: "Date",
           config: { type: "date" },
           position: 1,
@@ -133,10 +133,10 @@ describe("notebase utils", () => {
       id: "table-1",
       name: "Articles",
       updatedAt: new Date(),
-      notebaseColumns: [
+      columns: [
         {
           id: "column-summary",
-          notebaseId: "notebase-1",
+          tableId: "notebase-1",
           name: "Summary",
           config: { type: "string" },
           position: 0,
@@ -147,7 +147,7 @@ describe("notebase utils", () => {
         },
         {
           id: "column-date",
-          notebaseId: "notebase-1",
+          tableId: "notebase-1",
           name: "Date",
           config: { type: "date" },
           position: 1,

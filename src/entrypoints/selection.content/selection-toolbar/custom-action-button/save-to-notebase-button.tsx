@@ -2,10 +2,10 @@ import type {
   SelectionToolbarCustomAction,
   SelectionToolbarCustomActionNotebaseAccount,
 } from "@/types/config/selection-toolbar"
+import { i18n } from "#imports"
 import { useMutation } from "@tanstack/react-query"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { useRef, useState } from "react"
-import { i18n } from "#imports"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/base-ui/button"
 import { configFieldsAtomMap } from "@/utils/atoms/config"
@@ -96,12 +96,12 @@ function SaveToNotebaseButtonEnabled({
     })
   }
 
-  const saveMutation = useMutation(orpc.notebaseRow.create.mutationOptions({
+  const saveMutation = useMutation(orpc.row.create.mutationOptions({
     meta: {
       suppressToast: true,
     },
     onSuccess: (_data, variables) => {
-      const notebaseUrl = getNotebaseDetailUrl(variables.notebaseId)
+      const notebaseUrl = getNotebaseDetailUrl(variables.tableId)
       toast.success(i18n.t("action.saveToNotebaseSuccess"), {
         description: savingNotebaseNameRef.current ?? connection?.notebaseNameSnapshot,
         action: {
@@ -227,7 +227,7 @@ function SaveToNotebaseButtonEnabled({
 
     setIsPreparingSave(true)
     try {
-      const notebases = await orpcClient.notebase.list({})
+      const notebases = await orpcClient.customTable.list({})
       const ownership = classifyConnectedNotebaseOwnership({
         connection,
         currentAccount,
@@ -244,7 +244,7 @@ function SaveToNotebaseButtonEnabled({
         return
       }
 
-      const schema = await orpcClient.notebase.getSchema({ id: connection.notebaseId })
+      const schema = await orpcClient.customTable.getSchema({ id: connection.notebaseId })
       const refreshedConnection = refreshNotebaseConnectionAccountSnapshot(connection, currentAccount, schema.name)
       await refreshConnectionInConfig(refreshedConnection)
 
@@ -261,7 +261,7 @@ function SaveToNotebaseButtonEnabled({
       const { cells } = buildNotebaseRowCells(actionWithRefreshedConnection, schema, result)
       savingNotebaseNameRef.current = refreshedConnection.notebaseNameSnapshot
       saveMutation.mutate({
-        notebaseId: refreshedConnection.notebaseId,
+        tableId: refreshedConnection.notebaseId,
         data: {
           cells,
         },

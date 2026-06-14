@@ -1,6 +1,6 @@
+import { i18n } from "#imports"
 import { RiTranslate } from "@remixicon/react"
 import { useAtomValue } from "jotai"
-import { i18n } from "#imports"
 import { Kbd, KbdGroup } from "@/components/ui/base-ui/kbd"
 import { SelectionPopover } from "@/components/ui/selection-popover"
 import { configFieldsAtomMap } from "@/utils/atoms/config"

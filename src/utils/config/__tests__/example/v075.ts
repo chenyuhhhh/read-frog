@@ -396,6 +396,9 @@ export const testSeries: TestSeriesObject = {
       contextMenu: {
         enabled: true,
       },
+      immersiveReading: {
+        enabledPatterns: [],
+      },
       videoSubtitles: {
         enabled: false,
         autoStart: false,
@@ -792,6 +795,9 @@ export const testSeries: TestSeriesObject = {
       contextMenu: {
         enabled: true,
       },
+      immersiveReading: {
+        enabledPatterns: [],
+      },
       videoSubtitles: {
         enabled: false,
         autoStart: false,
@@ -1180,6 +1186,9 @@ export const testSeries: TestSeriesObject = {
       },
       contextMenu: {
         enabled: true,
+      },
+      immersiveReading: {
+        enabledPatterns: [],
       },
       videoSubtitles: {
         enabled: false,
@@ -1590,6 +1599,9 @@ export const testSeries: TestSeriesObject = {
       },
       contextMenu: {
         enabled: true,
+      },
+      immersiveReading: {
+        enabledPatterns: [],
       },
       videoSubtitles: {
         enabled: false,

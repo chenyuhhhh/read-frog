@@ -1,5 +1,5 @@
-import { useAtom } from "jotai"
 import { i18n } from "#imports"
+import { useAtom } from "jotai"
 import { ShortcutKeyRecorder } from "@/components/shortcut-key-recorder"
 import { configFieldsAtomMap } from "@/utils/atoms/config"
 import { DEFAULT_SELECTION_TRANSLATION_SHORTCUT_KEY } from "@/utils/constants/translate"

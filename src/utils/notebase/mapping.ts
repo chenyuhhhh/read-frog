@@ -1,9 +1,9 @@
 import type {
   NotebaseColumn,
+  NotebaseColumnConfig,
   NotebaseGetSchemaOutput,
   NotebaseRowCreateInput,
-} from "@read-frog/api-contract"
-import type { NotebaseColumnConfig } from "@read-frog/definitions"
+} from "./api-types"
 import type {
   SelectionToolbarCustomAction,
   SelectionToolbarCustomActionNotebaseMapping,
@@ -69,7 +69,7 @@ export function resolveNotebaseMappings(
   }
 
   const outputFields = new Map(action.outputSchema.map(field => [field.id, field]))
-  const notebaseColumns = new Map(schema?.notebaseColumns.map(column => [column.id, column]) ?? [])
+  const notebaseColumns = new Map(schema?.columns.map(column => [column.id, column]) ?? [])
 
   return connection.mappings.map((mapping) => {
     const localField = outputFields.get(mapping.localFieldId) ?? null

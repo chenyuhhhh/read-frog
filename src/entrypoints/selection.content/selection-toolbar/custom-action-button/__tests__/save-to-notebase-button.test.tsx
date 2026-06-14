@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-import type { NotebaseGetSchemaOutput } from "@read-frog/api-contract"
 import type { Config } from "@/types/config/config"
 import type { SelectionToolbarCustomAction } from "@/types/config/selection-toolbar"
+import type { NotebaseGetSchemaOutput } from "@/utils/notebase/api-types"
+import { i18n } from "#imports"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { createStore, Provider } from "jotai"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { i18n } from "#imports"
 import { configAtom } from "@/utils/atoms/config"
 import { DEFAULT_CONFIG } from "@/utils/constants/config"
 import { sendMessage } from "@/utils/message"
@@ -60,7 +60,7 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/utils/orpc/client", () => ({
   orpc: {
-    notebase: {
+    customTable: {
       getSchema: {
         queryOptions: (options: unknown) => ({
           queryKey: ["notebase", "schema"],
@@ -69,7 +69,7 @@ vi.mock("@/utils/orpc/client", () => ({
         }),
       },
     },
-    notebaseRow: {
+    row: {
       create: {
         mutationOptions: (options: unknown) => ({
           mutationFn: vi.fn(),
@@ -79,10 +79,16 @@ vi.mock("@/utils/orpc/client", () => ({
     },
   },
   orpcClient: {
-    notebase: {
+    customTable: {
       create: vi.fn(),
       getSchema: vi.fn(),
       list: vi.fn(),
+    },
+    column: {
+      create: vi.fn(),
+    },
+    row: {
+      create: vi.fn(),
     },
   },
 }))
@@ -140,10 +146,10 @@ function createSchema(columnId = "column-summary"): NotebaseGetSchemaOutput {
     id: "notebase-1",
     name: "Summarize Notes",
     updatedAt: new Date(),
-    notebaseColumns: [
+    columns: [
       {
         id: columnId,
-        notebaseId: "notebase-1",
+        tableId: "notebase-1",
         name: "Summary",
         config: { type: "string" },
         position: 0,
@@ -198,9 +204,11 @@ describe("saveToNotebaseButton beta gating", () => {
       },
     }
     mockAuthState.isPending = false
-    vi.mocked(orpcClient.notebase.create).mockResolvedValue({ txid: 1 })
-    vi.mocked(orpcClient.notebase.list).mockResolvedValue([{ id: "notebase-1", name: "Summarize Notes" }])
-    vi.mocked(orpcClient.notebase.getSchema).mockResolvedValue(createSchema())
+    vi.mocked(orpcClient.customTable.create).mockResolvedValue({ txid: 1 })
+    vi.mocked(orpcClient.customTable.list).mockResolvedValue([{ id: "notebase-1", name: "Summarize Notes" }])
+    vi.mocked(orpcClient.customTable.getSchema).mockResolvedValue(createSchema())
+    vi.mocked(orpcClient.column.create).mockResolvedValue({ txid: 1 })
+    vi.mocked(orpcClient.row.create).mockResolvedValue({ txid: 1 })
     vi.mocked(sendMessage).mockResolvedValue(undefined as never)
   })
 
@@ -234,11 +242,13 @@ describe("saveToNotebaseButton beta gating", () => {
     fireEvent.click(screen.getByRole("button", { name: i18n.t("action.saveToNotebaseCreateAndSaveShort") }))
 
     await waitFor(() => {
-      expect(orpcClient.notebase.create).toHaveBeenCalledTimes(1)
+      expect(orpcClient.customTable.create).toHaveBeenCalledTimes(1)
     })
 
-    const createInput = vi.mocked(orpcClient.notebase.create).mock.calls[0]?.[0] as { id: string } | undefined
+    const createInput = vi.mocked(orpcClient.customTable.create).mock.calls[0]?.[0] as { id: string } | undefined
     expect(createInput?.id).toBeTruthy()
+    expect(orpcClient.column.create).toHaveBeenCalledTimes(1)
+    expect(orpcClient.row.create).toHaveBeenCalledTimes(1)
 
     await waitFor(() => {
       expect(sendMessage).toHaveBeenCalledWith("openPage", {
@@ -298,7 +308,7 @@ describe("saveToNotebaseButton beta gating", () => {
     }
     const config = cloneConfig(DEFAULT_CONFIG)
     config.betaExperience.enabled = true
-    vi.mocked(orpcClient.notebase.list).mockResolvedValueOnce([])
+    vi.mocked(orpcClient.customTable.list).mockResolvedValueOnce([])
     renderButton(config, createConnectedAction())
 
     fireEvent.click(screen.getByRole("button", { name: i18n.t("action.saveToNotebase") }))
@@ -344,7 +354,7 @@ describe("saveToNotebaseButton beta gating", () => {
   it("shows a Custom AI Actions toast action instead of disabling invalid mappings", async () => {
     const config = cloneConfig(DEFAULT_CONFIG)
     config.betaExperience.enabled = true
-    vi.mocked(orpcClient.notebase.getSchema).mockResolvedValueOnce(createSchema("removed-column"))
+    vi.mocked(orpcClient.customTable.getSchema).mockResolvedValueOnce(createSchema("removed-column"))
     renderButton(config, createConnectedAction())
 
     const saveButton = screen.getByRole("button", { name: i18n.t("action.saveToNotebase") })

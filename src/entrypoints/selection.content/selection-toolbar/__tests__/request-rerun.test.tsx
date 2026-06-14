@@ -1329,7 +1329,7 @@ describe("selection toolbar requests", () => {
 
     const customizeButton = screen.getByRole("button", { name: "action.customizeCustomAction" })
 
-    expect(customizeButton).toHaveClass("size-7")
+    expect(customizeButton).toHaveClass("size-8")
 
     const { sendMessage } = await import("@/utils/message")
     vi.mocked(sendMessage).mockClear()

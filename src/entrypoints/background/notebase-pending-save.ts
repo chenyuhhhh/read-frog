@@ -1,9 +1,9 @@
-import type { NotebaseCreateInput, NotebaseGetSchemaOutput, NotebaseListOutput, NotebaseRowCreateInput } from "@read-frog/api-contract"
 import type { Config } from "@/types/config/config"
 import type { SelectionToolbarCustomActionNotebaseAccount } from "@/types/config/selection-toolbar"
+import type { NotebaseColumnCreateInput, NotebaseCreateInput, NotebaseGetSchemaOutput, NotebaseListOutput, NotebaseRowCreateInput } from "@/utils/notebase/api-types"
 import type { PendingConnectedNotebaseSave, PendingCreateNotebaseSave, PendingNotebaseSave, PendingNotebaseSaveActionStatus } from "@/utils/notebase/pending-save"
-import { AUTH_COOKIE_PATTERNS } from "@read-frog/definitions"
 import { browser } from "#imports"
+import { AUTH_COOKIE_PATTERNS } from "@read-frog/definitions"
 import { env } from "@/env"
 import { backgroundAuthClient } from "@/utils/auth/background-auth-client"
 import { getLocalConfig, setLocalConfig } from "@/utils/config/storage"
@@ -26,7 +26,9 @@ import {
 } from "@/utils/notebase/mapping"
 import {
   applyCreatedNotebaseConnectionToConfig,
+  buildNotebaseColumnCreateInputsFromPending,
   buildNotebaseCreateInputFromPending,
+  buildNotebaseInitialRowCreateInputFromPending,
   clearPendingNotebaseSave,
   createPendingNotebaseSave,
   doesSchemaMatchPendingColumns,
@@ -45,6 +47,7 @@ interface PendingNotebaseSaveProcessorDeps {
   setConfig: (config: Config) => Promise<void>
   getAuthenticatedAccount: () => Promise<SelectionToolbarCustomActionNotebaseAccount | null>
   createNotebase: (input: NotebaseCreateInput) => Promise<unknown>
+  createColumn: (input: NotebaseColumnCreateInput) => Promise<unknown>
   createRow: (input: NotebaseRowCreateInput) => Promise<unknown>
   listNotebases: () => Promise<NotebaseListOutput>
   getSchema: (id: string) => Promise<NotebaseGetSchemaOutput>
@@ -85,6 +88,19 @@ async function getAuthenticatedAccount() {
 
 function shouldClearCreateError(error: unknown) {
   return isORPCForbiddenError(error) || isORPCValidationError(error)
+}
+
+async function createNotebaseWithInitialData(
+  deps: PendingNotebaseSaveProcessorDeps,
+  pendingNotebaseSave: PendingCreateNotebaseSave,
+) {
+  await deps.createNotebase(buildNotebaseCreateInputFromPending(pendingNotebaseSave))
+
+  for (const input of buildNotebaseColumnCreateInputsFromPending(pendingNotebaseSave)) {
+    await deps.createColumn(input)
+  }
+
+  await deps.createRow(buildNotebaseInitialRowCreateInputFromPending(pendingNotebaseSave))
 }
 
 async function completePendingSave(
@@ -221,7 +237,7 @@ async function createReplacementNotebaseFromConnectedPending(
   const replacementPendingNotebaseSave = createPendingNotebaseSave(validation.action, pendingNotebaseSave.result, deps.now())
 
   try {
-    await deps.createNotebase(buildNotebaseCreateInputFromPending(replacementPendingNotebaseSave))
+    await createNotebaseWithInitialData(deps, replacementPendingNotebaseSave)
   }
   catch (error) {
     if (isORPCUnauthorizedError(error)) {
@@ -335,7 +351,7 @@ async function processCreatePendingSave(
   }
 
   try {
-    await deps.createNotebase(buildNotebaseCreateInputFromPending(pendingNotebaseSave))
+    await createNotebaseWithInitialData(deps, pendingNotebaseSave)
     await completePendingSave(deps, pendingNotebaseSave, connectedAccount)
   }
   catch (error) {
@@ -479,7 +495,7 @@ async function processConnectedPendingSave(
 
   try {
     await deps.createRow({
-      notebaseId: refreshedConnection.notebaseId,
+      tableId: refreshedConnection.notebaseId,
       data: {
         cells,
       },
@@ -572,10 +588,11 @@ export function setupNotebasePendingSaveProcessor() {
     getConfig: getLocalConfig,
     setConfig: setLocalConfig,
     getAuthenticatedAccount,
-    createNotebase: input => backgroundOrpcClient.notebase.create(input),
-    createRow: input => backgroundOrpcClient.notebaseRow.create(input),
-    listNotebases: () => backgroundOrpcClient.notebase.list({}),
-    getSchema: id => backgroundOrpcClient.notebase.getSchema({ id }),
+    createNotebase: input => backgroundOrpcClient.customTable.create(input),
+    createColumn: input => backgroundOrpcClient.column.create(input),
+    createRow: input => backgroundOrpcClient.row.create(input),
+    listNotebases: () => backgroundOrpcClient.customTable.list({}),
+    getSchema: id => backgroundOrpcClient.customTable.getSchema({ id }),
     openNotebasePage: async (notebaseId) => {
       await browser.tabs.create({
         active: true,

@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest"
 import { DEFAULT_CONFIG } from "@/utils/constants/config"
 import {
   applyCreatedNotebaseConnectionToConfig,
+  buildNotebaseColumnCreateInputsFromPending,
   buildNotebaseCreateInputFromPending,
+  buildNotebaseInitialRowCreateInputFromPending,
   createPendingNotebaseSave,
   doesSchemaMatchPendingColumns,
   getNotebaseDetailUrl,
@@ -88,23 +90,30 @@ describe("notebase pending save", () => {
     expect(buildNotebaseCreateInputFromPending(pending)).toEqual({
       id: pending.notebaseId,
       name: "Summarize",
-      options: {
-        initialColumns: [
-          {
-            id: pending.columns[0]!.notebaseColumnId,
-            name: "summary",
-            config: { type: "string" },
-          },
-          {
-            id: pending.columns[1]!.notebaseColumnId,
-            name: "score",
-            config: { type: "number", decimal: 0, format: "number" },
-          },
-        ],
-        initialRow: {
-          id: pending.rowId,
-          cells: pending.cells,
+    })
+    expect(buildNotebaseColumnCreateInputsFromPending(pending)).toEqual([
+      {
+        tableId: pending.notebaseId,
+        data: {
+          id: pending.columns[0]!.notebaseColumnId,
+          name: "summary",
+          config: { type: "string" },
         },
+      },
+      {
+        tableId: pending.notebaseId,
+        data: {
+          id: pending.columns[1]!.notebaseColumnId,
+          name: "score",
+          config: { type: "number", decimal: 0, format: "number" },
+        },
+      },
+    ])
+    expect(buildNotebaseInitialRowCreateInputFromPending(pending)).toEqual({
+      tableId: pending.notebaseId,
+      data: {
+        id: pending.rowId,
+        cells: pending.cells,
       },
     })
   })
@@ -178,9 +187,9 @@ describe("notebase pending save", () => {
       id: pending.notebaseId,
       name: pending.actionName,
       updatedAt: new Date(),
-      notebaseColumns: pending.columns.map((column, index) => ({
+      columns: pending.columns.map((column, index) => ({
         id: column.notebaseColumnId,
-        notebaseId: pending.notebaseId,
+        tableId: pending.notebaseId,
         name: column.notebaseColumnName,
         config: column.localFieldType === "number"
           ? { type: "number", decimal: 0, format: "number" }

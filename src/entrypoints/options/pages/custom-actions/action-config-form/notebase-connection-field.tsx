@@ -1,14 +1,11 @@
 import type {
-  NotebaseGetSchemaOutput,
-  NotebaseListOutput,
-} from "@read-frog/api-contract"
-import type {
   SelectionToolbarCustomAction,
   SelectionToolbarCustomActionNotebaseAccount,
   SelectionToolbarCustomActionNotebaseConnection,
   SelectionToolbarCustomActionNotebaseMapping,
   SelectionToolbarCustomActionOutputField,
 } from "@/types/config/selection-toolbar"
+import type { NotebaseGetSchemaOutput, NotebaseListOutput } from "@/utils/notebase/api-types"
 import { i18n } from "#imports"
 import { IconChevronsRight, IconPlus, IconRefresh, IconTrash } from "@tabler/icons-react"
 import { useStore } from "@tanstack/react-form"
@@ -55,7 +52,7 @@ import { withForm } from "./form"
 
 type NotebaseI18nKey = Parameters<typeof i18n.t>[0]
 type NotebaseItem = NotebaseListOutput[number]
-type NotebaseColumn = NotebaseGetSchemaOutput["notebaseColumns"][number]
+type NotebaseColumn = NotebaseGetSchemaOutput["columns"][number]
 
 interface SelectItemData<T> {
   value: T
@@ -126,7 +123,7 @@ function getSelectableRemoteColumns(
   connection: SelectionToolbarCustomActionNotebaseConnection,
   currentLocalField: SelectionToolbarCustomActionOutputField | null,
   currentMapping: SelectionToolbarCustomActionNotebaseMapping,
-  notebaseColumns: NotebaseGetSchemaOutput["notebaseColumns"],
+  notebaseColumns: NotebaseGetSchemaOutput["columns"],
 ) {
   const usedRemoteColumnIds = new Set(
     connection.mappings
@@ -155,7 +152,7 @@ function getSelectableRemoteColumns(
 function getNextDefaultMapping(
   connection: SelectionToolbarCustomActionNotebaseConnection,
   outputSchema: SelectionToolbarCustomActionOutputField[],
-  notebaseColumns: NotebaseGetSchemaOutput["notebaseColumns"],
+  notebaseColumns: NotebaseGetSchemaOutput["columns"],
 ) {
   const usedLocalFieldIds = new Set(connection.mappings.map(mapping => mapping.localFieldId))
   const usedRemoteColumnIds = new Set(connection.mappings.map(mapping => mapping.notebaseColumnId))
@@ -192,7 +189,7 @@ function getLocalFieldSelectItems(fields: SelectionToolbarCustomActionOutputFiel
 
 function getRemoteFieldSelectItems(
   mapping: SelectionToolbarCustomActionNotebaseMapping,
-  remoteOptions: NotebaseGetSchemaOutput["notebaseColumns"],
+  remoteOptions: NotebaseGetSchemaOutput["columns"],
   currentRemoteMissing: boolean,
 ): SelectItemData<string>[] {
   return [
@@ -232,7 +229,7 @@ export const NotebaseConnectionField = withForm({
       void form.handleSubmit()
     }, [form])
 
-    const listQuery = useQuery(orpc.notebase.list.queryOptions({
+    const listQuery = useQuery(orpc.customTable.list.queryOptions({
       input: {},
       enabled: canWriteConnection && isBetaAllowed,
       staleTime: 60_000,
@@ -255,7 +252,7 @@ export const NotebaseConnectionField = withForm({
     const isNotebaseUnavailableConnection = connectionOwnership?.kind === "notebase_unavailable"
     const isForeignConnection = connectionOwnership?.kind === "foreign_account"
 
-    const schemaQuery = useQuery(orpc.notebase.getSchema.queryOptions({
+    const schemaQuery = useQuery(orpc.customTable.getSchema.queryOptions({
       input: { id: sanitizedConnection?.notebaseId ?? "" },
       enabled: canWriteConnection && isBetaAllowed && !!sanitizedConnection?.notebaseId && isOwnedConnection,
       retry: false,
@@ -346,7 +343,7 @@ export const NotebaseConnectionField = withForm({
         mappings: sanitizedConnection.mappings.map(mapping => ({
           ...mapping,
           notebaseColumnNameSnapshot:
-            refreshResult.data.notebaseColumns.find(
+            refreshResult.data.columns.find(
               (column: NotebaseColumn) => column.id === mapping.notebaseColumnId,
             )?.name ?? mapping.notebaseColumnNameSnapshot,
         })),
@@ -358,7 +355,7 @@ export const NotebaseConnectionField = withForm({
         return
       }
 
-      const nextMapping = getNextDefaultMapping(sanitizedConnection, outputSchema, schemaQuery.data.notebaseColumns)
+      const nextMapping = getNextDefaultMapping(sanitizedConnection, outputSchema, schemaQuery.data.columns)
       if (!nextMapping) {
         return
       }
@@ -591,7 +588,7 @@ export const NotebaseConnectionField = withForm({
                       size="sm"
                       variant="outline"
                       onClick={handleAddMapping}
-                      disabled={!getNextDefaultMapping(sanitizedConnection, outputSchema, schemaQuery.data.notebaseColumns)}
+                      disabled={!getNextDefaultMapping(sanitizedConnection, outputSchema, schemaQuery.data.columns)}
                     >
                       <IconPlus className="size-4" />
                       {t("addMappingAction")}
@@ -616,9 +613,9 @@ export const NotebaseConnectionField = withForm({
                         sanitizedConnection,
                         localField,
                         mapping,
-                        schemaQuery.data.notebaseColumns,
+                        schemaQuery.data.columns,
                       )
-                      const currentRemoteMissing = !schemaQuery.data.notebaseColumns.some(
+                      const currentRemoteMissing = !schemaQuery.data.columns.some(
                         (column: NotebaseColumn) => column.id === mapping.notebaseColumnId,
                       )
                       const localSelectItems = getLocalFieldSelectItems(localOptions)
@@ -671,7 +668,7 @@ export const NotebaseConnectionField = withForm({
                                   return
                                 }
 
-                                const nextNotebaseColumn = schemaQuery.data.notebaseColumns.find(
+                                const nextNotebaseColumn = schemaQuery.data.columns.find(
                                   (column: NotebaseColumn) => column.id === value,
                                 )
                                 updateConnection({

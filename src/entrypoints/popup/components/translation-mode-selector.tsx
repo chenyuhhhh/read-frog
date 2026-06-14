@@ -1,7 +1,7 @@
 import type { TranslationMode as TranslationModeType } from "@/types/config/translate"
+import { i18n } from "#imports"
 import { Icon } from "@iconify/react"
 import { useAtom } from "jotai"
-import { i18n } from "#imports"
 import { Button } from "@/components/ui/base-ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/base-ui/tooltip"
 import { configFieldsAtomMap } from "@/utils/atoms/config"
