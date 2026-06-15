@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest"
+import { BLOCK_CONTENT_CLASS, CONTENT_WRAPPER_CLASS, INLINE_CONTENT_CLASS } from "@/utils/constants/dom-labels"
 import {
   buildContextSnapshot,
   createRangeSnapshot,
@@ -122,6 +123,38 @@ describe("buildContextSnapshot", () => {
     expect(buildContextSnapshot(createSelectionSnapshot(range))).toEqual({
       text: "Alpha Beta gamma",
       paragraphs: ["Alpha Beta gamma"],
+    })
+  })
+
+  it("excludes injected translation text from paragraph context", () => {
+    document.body.innerHTML = `
+      <article>
+        <p id="paragraph">
+          Alpha <strong id="selection">Beta</strong> gamma.
+          <span class="${CONTENT_WRAPPER_CLASS}">
+            <br>
+            <span class="${BLOCK_CONTENT_CLASS}">阿尔法贝塔伽马。</span>
+          </span>
+          <span class="${CONTENT_WRAPPER_CLASS}">
+            <span> </span>
+            <span class="${INLINE_CONTENT_CLASS}">内联译文</span>
+          </span>
+        </p>
+      </article>
+    `
+
+    const selectionNode = document.getElementById("selection")?.firstChild
+    if (!selectionNode) {
+      throw new Error("Selection node not found")
+    }
+
+    const range = document.createRange()
+    range.setStart(selectionNode, 0)
+    range.setEnd(selectionNode, selectionNode.textContent?.length ?? 0)
+
+    expect(buildContextSnapshot(createSelectionSnapshot(range))).toEqual({
+      text: "Alpha Beta gamma.",
+      paragraphs: ["Alpha Beta gamma."],
     })
   })
 })

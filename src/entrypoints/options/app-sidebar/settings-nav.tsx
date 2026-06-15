@@ -114,6 +114,13 @@ export function SettingsNav() {
           )}
 
           <SidebarMenuItem>
+            <SidebarMenuButton render={<Link to="/vocabulary-notebook" />} isActive={pathname === "/vocabulary-notebook"}>
+              <Icon icon="tabler:notebook" />
+              <span>{i18n.t("vocabularyNotebook.title")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
             <SidebarMenuButton render={<Link to="/statistics" />} isActive={pathname === "/statistics"}>
               <Icon icon="tabler:chart-dots" />
               <span>{i18n.t("options.statistics.title")}</span>

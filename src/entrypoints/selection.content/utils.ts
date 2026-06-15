@@ -1,3 +1,5 @@
+import { BLOCK_CONTENT_CLASS, CONTENT_WRAPPER_CLASS, INLINE_CONTENT_CLASS } from "@/utils/constants/dom-labels"
+
 export interface SelectionRangeSnapshot {
   startContainer: Node
   startOffset: number
@@ -60,6 +62,11 @@ export function normalizeSelectedText(value: string | null | undefined) {
 
 function normalizeParagraphText(value: string) {
   return value.replace(ZERO_WIDTH_CHAR_REGEX, "").replace(WHITESPACE_REGEX, " ").trim()
+}
+
+function isInjectedTranslationText(node: Node) {
+  const element = getNearestParentElement(node)
+  return !!element?.closest(`.${CONTENT_WRAPPER_CLASS}, .${BLOCK_CONTENT_CLASS}, .${INLINE_CONTENT_CLASS}`)
 }
 
 export function createRangeSnapshot(rangeSource: SelectionRangeSource): SelectionRangeSnapshot {
@@ -320,7 +327,7 @@ function extractOwnerText(owner: ParagraphOwner) {
   const textParts: string[] = []
   const walker = document.createTreeWalker(owner, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
-      return normalizeParagraphText(node.textContent ?? "") === ""
+      return isInjectedTranslationText(node) || normalizeParagraphText(node.textContent ?? "") === ""
         ? NodeFilter.FILTER_REJECT
         : NodeFilter.FILTER_ACCEPT
     },
