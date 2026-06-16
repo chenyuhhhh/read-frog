@@ -1,3 +1,4 @@
+import type { ProtectedContentState } from "./protected-content"
 import type { Config } from "@/types/config/config"
 import type { TransNode } from "@/types/dom"
 import {
@@ -16,21 +17,25 @@ import {
   isShallowInlineHTMLElement,
   isTextNode,
 } from "./filter"
+import { collectProtectedContent, isProtectedTranslationElement } from "./protected-content"
 
 const NON_NEWLINE_WHITESPACE_RE = /[^\S\n]/
 
+function extractTextNodeContent(node: Text): string {
+  const text = node.textContent ?? ""
+  const trimmed = text.trim()
+  if (trimmed === "")
+    return " "
+  const leadingWs = text.slice(0, text.length - text.trimStart().length)
+  const trailingWs = text.slice(text.trimEnd().length)
+  const hasLeading = NON_NEWLINE_WHITESPACE_RE.test(leadingWs)
+  const hasTrailing = NON_NEWLINE_WHITESPACE_RE.test(trailingWs)
+  return (hasLeading ? " " : "") + trimmed + (hasTrailing ? " " : "")
+}
+
 export function extractTextContent(node: TransNode, config: Config): string {
-  if (isTextNode(node)) {
-    const text = node.textContent ?? ""
-    const trimmed = text.trim()
-    if (trimmed === "")
-      return " "
-    const leadingWs = text.slice(0, text.length - text.trimStart().length)
-    const trailingWs = text.slice(text.trimEnd().length)
-    const hasLeading = NON_NEWLINE_WHITESPACE_RE.test(leadingWs)
-    const hasTrailing = NON_NEWLINE_WHITESPACE_RE.test(trailingWs)
-    return (hasLeading ? " " : "") + trimmed + (hasTrailing ? " " : "")
-  }
+  if (isTextNode(node))
+    return extractTextNodeContent(node)
 
   // Handle <br> elements as line breaks
   if (isHTMLElement(node) && node.tagName === "BR") {
@@ -54,6 +59,36 @@ export function extractTextContent(node: TransNode, config: Config): string {
     // TODO: support SVGElement in the future
     if (isTextNode(child) || isHTMLElement(child)) {
       return text + extractTextContent(child, config)
+    }
+    return text
+  }, "")
+}
+
+export function extractTextContentWithProtectedContent(
+  node: TransNode,
+  config: Config,
+  protectedContent: ProtectedContentState,
+): string {
+  if (isTextNode(node))
+    return extractTextNodeContent(node)
+
+  if (isHTMLElement(node) && isProtectedTranslationElement(node)) {
+    return collectProtectedContent(node, protectedContent)
+  }
+
+  // Handle <br> elements as line breaks
+  if (isHTMLElement(node) && node.tagName === "BR") {
+    return "\n"
+  }
+
+  if (isDontWalkIntoAndDontTranslateAsChildElement(node, config)) {
+    return ""
+  }
+
+  const childNodes = [...node.childNodes]
+  return childNodes.reduce((text: string, child: Node): string => {
+    if (isTextNode(child) || isHTMLElement(child)) {
+      return text + extractTextContentWithProtectedContent(child, config, protectedContent)
     }
     return text
   }, "")

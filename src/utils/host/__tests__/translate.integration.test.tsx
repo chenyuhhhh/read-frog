@@ -1499,6 +1499,32 @@ describe("translate", () => {
     })
   })
 
+  describe("math content handling", () => {
+    it("bilingual mode: should preserve protected inline math in translated content", async () => {
+      vi.mocked(translateTextForPage).mockResolvedValueOnce("翻译 __READ_FROG_PROTECTED_0__ 完成")
+
+      render(
+        <p data-testid="test-node">
+          Compute
+          {" "}
+          <span className="math notranslate nohighlight">v=(v_1 \dots v_m)</span>
+          {" "}
+          with backward.
+        </p>,
+      )
+
+      const node = screen.getByTestId("test-node")
+      await removeOrShowPageTranslation("bilingual", true)
+
+      expect(translateTextForPage).toHaveBeenCalledWith("Compute __READ_FROG_PROTECTED_0__ with backward.")
+      const wrapper = expectTranslationWrapper(node, "bilingual")
+      const translatedContent = expectTranslatedContent(wrapper, BLOCK_CONTENT_CLASS, "翻译 v=(v_1 \\dots v_m) 完成")
+      const mathNode = translatedContent?.querySelector(".math.notranslate.nohighlight")
+      expect(mathNode).toBeTruthy()
+      expect(mathNode).toHaveTextContent("v=(v_1 \\dots v_m)")
+    })
+  })
+
   describe("numeric content handling", () => {
     describe("bilingual mode", () => {
       it("should not translate pure numbers", async () => {

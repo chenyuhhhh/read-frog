@@ -9,6 +9,7 @@ import {
   NOTRANSLATE_CLASS,
 } from "@/utils/constants/dom-labels"
 import { CUSTOM_DONT_WALK_INTO_ELEMENT_SELECTOR_MAP, CUSTOM_FORCE_BLOCK_TRANSLATION_SELECTOR_MAP, DONT_WALK_AND_TRANSLATE_TAGS, DONT_WALK_BUT_TRANSLATE_TAGS, FORCE_BLOCK_TAGS, MAIN_CONTENT_IGNORE_TAGS } from "@/utils/constants/dom-rules"
+import { isProtectedTranslationElement } from "./protected-content"
 
 export function isEditable(element: HTMLElement): boolean {
   const tag = element.tagName
@@ -132,11 +133,12 @@ export function isDontWalkIntoButTranslateAsChildElement(element: HTMLElement): 
   const dontWalkClass = element.classList.contains(NOTRANSLATE_CLASS)
 
   const dontWalkTag = DONT_WALK_BUT_TRANSLATE_TAGS.has(element.tagName)
+  const dontWalkProtectedContent = isProtectedTranslationElement(element)
 
   // issue: https://github.com/mengxi-ream/read-frog/issues/459
   // const dontWalkAttr = element.getAttribute('translate') === 'no'
 
-  return dontWalkClass || dontWalkTag
+  return dontWalkClass || dontWalkTag || dontWalkProtectedContent
 }
 
 // https://github.com/mengxi-ream/read-frog/issues/940

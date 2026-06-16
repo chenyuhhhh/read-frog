@@ -1,3 +1,4 @@
+import type { ProtectedContentEntry } from "../../dom/protected-content"
 import type { TranslationNodeStyleConfig } from "@/types/config/translate"
 import type { TransNode } from "@/types/dom"
 import {
@@ -9,6 +10,7 @@ import {
 } from "../../../constants/dom-labels"
 import { isBlockTransNode, isCustomForceBlockTranslation, isHTMLElement, isInlineTransNode } from "../../dom/filter"
 import { getOwnerDocument } from "../../dom/node"
+import { replaceProtectedContentTokens } from "../../dom/protected-content"
 import { decorateTranslationNode } from "../ui/decorate-translation"
 import { isForceInlineTranslation } from "../ui/translation-utils"
 
@@ -80,6 +82,7 @@ export async function insertTranslatedNodeIntoWrapper(
   translatedText: string,
   translationNodeStyle: TranslationNodeStyleConfig,
   forceBlockTranslation: boolean = false,
+  protectedContent: ProtectedContentEntry[] = [],
 ): Promise<void> {
   // Use the wrapper's owner document
   const ownerDoc = getOwnerDocument(translatedWrapperNode)
@@ -109,6 +112,7 @@ export async function insertTranslatedNodeIntoWrapper(
   }
 
   translatedNode.textContent = translatedText
+  replaceProtectedContentTokens(translatedNode, protectedContent)
   translatedWrapperNode.appendChild(translatedNode)
   await decorateTranslationNode(translatedNode, translationNodeStyle)
 

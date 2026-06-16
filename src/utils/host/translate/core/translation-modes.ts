@@ -11,7 +11,13 @@ import { batchDOMOperation } from "../../dom/batch-dom"
 import { isBlockTransNode, isHTMLElement, isTextNode, isTransNode } from "../../dom/filter"
 import { unwrapDeepestOnlyHTMLChild } from "../../dom/find"
 import { getOwnerDocument } from "../../dom/node"
-import { extractTextContent } from "../../dom/traversal"
+import {
+  createProtectedContentState,
+  removeProtectedContentTokens,
+  replaceProtectedContentTokens,
+  serializeNodeWithProtectedContent,
+} from "../../dom/protected-content"
+import { extractTextContentWithProtectedContent } from "../../dom/traversal"
 import { removeTranslatedWrapperWithRestore } from "../dom/translation-cleanup"
 import { insertTranslatedNodeIntoWrapper } from "../dom/translation-insertion"
 import { findPreviousTranslatedWrapperInside } from "../dom/translation-wrapper"
@@ -87,8 +93,10 @@ export async function translateNodesBilingualMode(
       }
     }
 
-    const textContent = transNodes.map(node => extractTextContent(node, config)).join("").trim()
-    if (!textContent || isNumericContent(textContent))
+    const protectedContent = createProtectedContentState()
+    const textContent = transNodes.map(node => extractTextContentWithProtectedContent(node, config, protectedContent)).join("").trim()
+    const translatableTextContent = removeProtectedContentTokens(textContent).trim()
+    if (!textContent || !translatableTextContent || isNumericContent(translatableTextContent))
       return
 
     if (await shouldFilterSmallParagraph(textContent, config))
@@ -136,6 +144,7 @@ export async function translateNodesBilingualMode(
       translatedText,
       config.translate.translationNodeStyle,
       forceBlockTranslation,
+      protectedContent.entries,
     )
   }
   finally {
@@ -229,8 +238,10 @@ export async function translateNodeTranslationOnlyMode(
       }
     }
 
-    const innerTextContent = transNodes.map(node => extractTextContent(node, config)).join("")
-    if (!innerTextContent.trim() || isNumericContent(innerTextContent))
+    const innerTextProtectedContent = createProtectedContentState()
+    const innerTextContent = transNodes.map(node => extractTextContentWithProtectedContent(node, config, innerTextProtectedContent)).join("")
+    const translatableInnerTextContent = removeProtectedContentTokens(innerTextContent).trim()
+    if (!innerTextContent.trim() || !translatableInnerTextContent || isNumericContent(translatableInnerTextContent))
       return
 
     if (await shouldFilterSmallParagraph(innerTextContent, config))
@@ -252,14 +263,8 @@ export async function translateNodeTranslationOnlyMode(
       originalContentMap.set(parentNode, parentNode.innerHTML)
     }
 
-    const getStringFormatFromNode = (node: Element | Text) => {
-      if (isTextNode(node)) {
-        return node.textContent
-      }
-      return node.outerHTML
-    }
-
-    const textContent = cleanTextContent(transNodes.map(getStringFormatFromNode).join(""))
+    const protectedContent = createProtectedContentState()
+    const textContent = cleanTextContent(transNodes.map(node => serializeNodeWithProtectedContent(node, protectedContent)).join(""))
     if (!textContent)
       return
 
@@ -300,6 +305,7 @@ export async function translateNodeTranslationOnlyMode(
     }
 
     translatedWrapperNode.innerHTML = translatedText
+    replaceProtectedContentTokens(translatedWrapperNode, protectedContent.entries)
 
     // Batch final DOM mutations to reduce layout thrashing
     batchDOMOperation(() => {
